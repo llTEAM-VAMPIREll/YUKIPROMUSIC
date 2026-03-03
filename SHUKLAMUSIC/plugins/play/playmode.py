@@ -26,7 +26,7 @@ def small_caps(text: str) -> str:
     small_caps_dict = {
         'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ғ', 'g': 'ɢ', 'h': 'ʜ',
         'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 'o': 'ᴏ', 'p': 'ᴘ',
-        'q': 'ǫ', 'r': 'ʀ', 's': 's', 't': 'ᴛ', 'u': 'ᴜ', 'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x',
+        'q': 'ǫ', 'r': 'ʀ', 's': 's', 't': 'ᴛ', 'u': 'ᴜ', 'v': 'ᴠ', 'w': 'x', 'x': 'x',
         'y': 'ʏ', 'z': 'ᴢ'
     }
     return "".join(small_caps_dict.get(c, c) for c in text.lower())
@@ -160,7 +160,7 @@ async def tv_callback(client, query: CallbackQuery):
             pipe_file = f"temp_pipe_{abs(chat_id)}.py"
             log_file = f"pipe_log_{abs(chat_id)}.txt"
 
-            # Flask Script Generation
+            # 🔥 FLASK SCRIPT (Ping route aur threaded=True added!)
             pipe_code = f"""import subprocess
 from flask import Flask, Response
 import logging
@@ -170,6 +170,11 @@ log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
+# 🟢 THE SECRET SAUCE: Server check karne ka bina video load kiye
+@app.route('/ping')
+def ping():
+    return "PONG", 200
+
 @app.route('/{clean_name}.m3u8')
 def stream_tv():
     master = "{raw_url}"
@@ -178,7 +183,8 @@ def stream_tv():
     return Response(process.stdout, mimetype="application/x-mpegURL")
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port={port})
+    # threaded=True zaroori hai taaki server lock na ho!
+    app.run(host='127.0.0.1', port={port}, threaded=True)
 """
             with open(pipe_file, "w") as f:
                 f.write(pipe_code)
@@ -186,16 +192,17 @@ if __name__ == '__main__':
             os.system(f"pkill -f {pipe_file}")
             time.sleep(0.5)
 
-            # 🚀 FLASK KO START KARO AUR LOG SAVE KARO (dev/null hata diya)
+            # FLASK KO START KARO AUR LOG SAVE KARO
             os.system(f"nohup {sys.executable} {pipe_file} > {log_file} 2>&1 &")
             
+            # 🔥 AB HUM /ping PAR CHECK KARENGE
+            ping_link = f"http://127.0.0.1:{port}/ping"
             local_bypass_link = f"http://127.0.0.1:{port}/{clean_name}.m3u8"
 
-            # 🧠 SMART WAIT LOGIC (Bot tab tak wait karega jab tak 200 OK na aaye)
             server_ready = False
             for i in range(12): # Max 12 seconds wait
                 try:
-                    res = requests.get(local_bypass_link, stream=True, timeout=2)
+                    res = requests.get(ping_link, timeout=1) # Yahan ping_link use ho raha hai!
                     if res.status_code == 200:
                         server_ready = True
                         break
@@ -204,13 +211,10 @@ if __name__ == '__main__':
                 time.sleep(1)
 
             if not server_ready:
-                # Agar start nahi hua, toh log file check karo
-                err_msg = "Proxy Server Timeout ho gaya."
+                err_msg = "Proxy Boot Error."
                 try:
                     with open(log_file, "r") as lf:
-                        err_logs = lf.read()[-300:] # Aakhri 300 characters error ke
-                    if err_logs.strip():
-                        err_msg = f"Local Server Error:\n`{err_logs}`"
+                        err_msg += f"\n`{lf.read()[-300:]}`"
                 except:
                     pass
                 raise Exception(err_msg)
@@ -223,7 +227,7 @@ if __name__ == '__main__':
                 video=True
             )
             
-            text = f"✅ **Hellfire TV Live!**\n\n📺 **Channel:** {ch_name}\n🚀 Smart Engine Active!" + WATERMARK
+            text = f"✅ **Hellfire TV Live!**\n\n📺 **Channel:** {ch_name}\n🚀 Direct Stream Connected!" + WATERMARK
             await query.message.edit_text(
                 text,
                 reply_markup=InlineKeyboardMarkup([
@@ -231,12 +235,12 @@ if __name__ == '__main__':
                 ])
             )
         except Exception as e:
-            text = f"❌ **Stream Failed!**\nChannel `{ch_name}` ya Proxy fail hui.\n\n**🔍 DEBUG INFO:**\n`{str(e)}`" + WATERMARK
+            text = f"❌ **Stream Failed!**\n\n**🔍 POST-MORTEM:**\n`{str(e)}`" + WATERMARK
             await query.message.edit_text(
                 text,
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton(text="🔄 Retry", callback_data=f"retrytv_{category}_{page}_{ch_idx}")],
                     [InlineKeyboardButton(text="🔙 Back", callback_data=f"tvcat_{category}_{page}")]
                 ])
-            )
-            
+        )
+        
