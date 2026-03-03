@@ -8,7 +8,7 @@ import os
 import json
 import requests
 import math
-import urllib.parse
+import base64
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 
@@ -160,9 +160,9 @@ async def playtv_cmd(client, message: Message):
                 try: await SHUKLA.force_stop_stream(chat_id)
                 except: pass 
                 
-                # 🔥 SIMPLE AND BEST APPROACH (No Hex/Base64)
-                safe_url = urllib.parse.quote(raw_url, safe='')
-                local_bypass_link = f"http://127.0.0.1:5000/stream.m3u8?url={safe_url}"
+                # 🔥 BASE64 HACK: Encode karke '=' hata do
+                safe_url = base64.urlsafe_b64encode(raw_url.encode('utf-8')).decode('utf-8').rstrip("=")
+                local_bypass_link = f"http://127.0.0.1:5000/play/{safe_url}.m3u8"
 
                 os.makedirs("downloads", exist_ok=True)
                 clean_id = str(chat_id).replace("-", "G")
@@ -240,9 +240,9 @@ async def tv_callback(client, query: CallbackQuery):
             try: await SHUKLA.force_stop_stream(chat_id)
             except: pass 
 
-            # 🔥 SIMPLE AND BEST APPROACH
-            safe_url = urllib.parse.quote(raw_url, safe='')
-            local_bypass_link = f"http://127.0.0.1:5000/stream.m3u8?url={safe_url}"
+            # 🔥 BASE64 HACK: Encode karke '=' hata do
+            safe_url = base64.urlsafe_b64encode(raw_url.encode('utf-8')).decode('utf-8').rstrip("=")
+            local_bypass_link = f"http://127.0.0.1:5000/play/{safe_url}.m3u8"
 
             os.makedirs("downloads", exist_ok=True)
             clean_id = str(chat_id).replace("-", "G")
