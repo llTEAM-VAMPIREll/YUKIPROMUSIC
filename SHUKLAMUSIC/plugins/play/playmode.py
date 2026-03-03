@@ -29,7 +29,7 @@ def small_caps(text: str) -> str:
     }
     return "".join(small_caps_dict.get(c, c) for c in text.lower())
 
-WATERMARK = small_caps("\n\n© ʜᴇʟʟғɪʀᴇ ᴅᴇᴠs | ᴅᴏ ɴᴏᴛ ᴄᴏᴘʏ ᴛʜɪs ʙᴏᴛ")
+WATERMARK = small_caps("\n\n© NOW LIVE ")
 
 # ==========================================
 # 🎛️ PLAYMODE COMMAND (Cleaned)
