@@ -130,7 +130,7 @@ async def tv_callback(client, query: CallbackQuery):
 
     elif data == "playtv_main":
         data = load_iptv_data()
-        buttons = [[InlineKeyboardButton(text=f"📺 {cat}", callback_data=f"tvcat_{cat}_0")] for cat in list(data.keys())[:10]]
+        buttons = [[InlineKeyboardButton(text=f"🥀 {cat}", callback_data=f"tvcat_{cat}_0")] for cat in list(data.keys())[:10]]
         buttons.append([InlineKeyboardButton(text="❌ Close", callback_data="close_tv")])
         text = "**🔥 HELLFIRE TV IS LIVE! 🔥**\nSelect a category:" + WATERMARK
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
@@ -151,14 +151,13 @@ async def tv_callback(client, query: CallbackQuery):
             except Exception:
                 pass 
 
-            # 🧠 BASE64 HACK: URL ko encrypt kiya
-            safe_url = base64.urlsafe_b64encode(raw_url.encode('utf-8')).decode('utf-8')
+            # 🧠 BASE64 HACK: URL encrypt kiya aur '=' hata diya
+            safe_url = base64.urlsafe_b64encode(raw_url.encode('utf-8')).decode('utf-8').rstrip("=")
             
-            # 🔥 PROBLEM 1 & 2 FIX: '=' hata diya aur query parameter (?id=) use kiya
-            safe_url = safe_url.rstrip("=")
-            local_bypass_link = f"http://127.0.0.1:5000/play.m3u8?id={safe_url}"
+            # 🚀 PHANTOM LINK FIX: Bot ko ab ye ek clean, external .m3u8 file lagegi
+            # 'localhost' aur fake path use kiya hai taaki engine 127.0.0.1 dekh kar confuse na ho
+            local_bypass_link = f"http://localhost:5000/stream/{safe_url}/video.m3u8"
 
-            # 🚀 Engine ko clean link feed kar diya
             await SHUKLA.join_call(
                 chat_id, 
                 chat_id, 
@@ -166,7 +165,7 @@ async def tv_callback(client, query: CallbackQuery):
                 video=True
             )
             
-            text = f"✅ **Hellfire TV Live!**\n\n📺 **Channel:** {ch_name}\n🚀 Stream Skipped & Active!" + WATERMARK
+            text = f"✅ **Hellfire TV Live!**\n\n📺 **Channel:** {ch_name}\n🚀 Phantom Bypass Active!" + WATERMARK
             await query.message.edit_text(
                 text,
                 reply_markup=InlineKeyboardMarkup([
