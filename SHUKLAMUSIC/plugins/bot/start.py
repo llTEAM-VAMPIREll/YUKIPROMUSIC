@@ -1,8 +1,8 @@
 import time
 import random
 import asyncio
-import traceback # 🔥 ERROR TRACKER KE LIYE
-import aiohttp # 🔥 ADDED FOR API INJECTION
+import traceback
+import aiohttp 
 import json
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
@@ -37,14 +37,12 @@ YUMI_PICS = [
     "https://files.catbox.moe/csyzob.jpg",
 ]
 
-# 🔥 PROMO MEIN CUSTOM EMOJIS ADD KIYE HAIN
+# 🔥 PROMO MEIN CUSTOM EMOJIS
 PROMO =  "───────────────────────\n<emoji id='5999100917645841519'>💀</emoji> <b>ᴘᴧɪᴅ ᴘʀσϻσᴛɪση ᴧᴠᴧɪʟᴧʙʟє</b> <emoji id='5999100917645841519'>💀</emoji>\n───────────────────────\n<blockquote><emoji id='6080189526532167993'>😉</emoji> ᴄʜᴧᴛᴛɪηɢ ɢʀσυᴘ's\n<emoji id='5413546177683539369'>😈</emoji> ᴄσʟσʀ ᴛʀᴧᴅɪηɢ ɢᴧϻє's\n<emoji id='6080176744709495278'>🐾</emoji> ᴄʜᴧηηєʟ's | ɢʀσυᴘ's .....\n<emoji id='5415586682286128590'>🔫</emoji> ʙєᴛᴛɪηɢ ᴧᴅs σʀ ᴧηʏᴛʜɪηɢ</blockquote>\n\n───────────────────────\n<emoji id='6080202089311507876'>😎</emoji> <b>ᴘʟᴧηꜱ -</b>\n<blockquote>||<emoji id='5413415116756500503'>☠️</emoji> ᴅᴧɪʟʏ\n<emoji id='5413415116756500503'>☠️</emoji> ᴡєєᴋʟʏ\n<emoji id='5413415116756500503'>☠️</emoji> ϻσηᴛʜʟʏ||</blockquote>\n───────────────────────\n<emoji id='6001132493011425597'>💖</emoji> <b>ᴄσηᴛᴧᴄᴛ -</b> <a href='https://t.me/hehe_stalker'>愛 | 𝗦𝗧么𝗟𝗞𝚵𝗥</a>\n───────────────────────"
 
-GREET = [
-    "💞", "🥂", "🔍", "🧪", "🥂", "⚡️", "🔥",
-]
+GREET = ["💞", "🥂", "🔍", "🧪", "🥂", "⚡️", "🔥"]
 
-# 🔥 HELLFIRE LIVE ERROR TRACKER INJECTION
+# 🔥 INJECT PREMIUM BUTTONS
 async def inject_premium_markup(chat_id, message_id, markup):
     try:
         token = getattr(config, "BOT_TOKEN", getattr(app, "bot_token", None))
@@ -55,7 +53,7 @@ async def inject_premium_markup(chat_id, message_id, markup):
     except Exception as e:
         print(f"❌ CODE CRASH: {e}")
 
-# 🔥 THE MAGIC START FUNCTION (Auto Flying Hearts + Premium Buttons)
+# 🔥 THE MAGIC START FUNCTION (WITH FAIL-SAFE)
 async def send_magic_start(chat_id, photo_url, caption, markup):
     try:
         token = getattr(config, "BOT_TOKEN", getattr(app, "bot_token", None))
@@ -71,25 +69,37 @@ async def send_magic_start(chat_id, photo_url, caption, markup):
         }
         
         async with aiohttp.ClientSession() as session:
-            await session.post(url, json=payload)
+            async with session.post(url, json=payload) as resp:
+                res = await resp.json()
+                
+                # Agar API ne Magic Effect reject kar diya, toh normal message bhejega
+                if not res.get("ok"):
+                    run = await app.send_photo(chat_id, photo=photo_url, caption=caption)
+                    await inject_premium_markup(chat_id, run.id, markup)
+                    
     except Exception as e:
-        print(f"❌ Magic Start Error: {e}")
+        # Crash hone par bhi normal message bhejega
+        run = await app.send_photo(chat_id, photo=photo_url, caption=caption)
+        await inject_premium_markup(chat_id, run.id, markup)
 
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
 async def start_pm(client, message: Message, _):
+    
     # 🔥 STEP 1: MESSAGE PE REACTION (❤️)
     try:
         await client.send_reaction(chat_id=message.chat.id, message_id=message.id, emoji="❤️")
     except: pass
         
-    # 🔥 STEP 2: TERA VIP STICKER
+    # 🔥 STEP 2: STICKER BHEJNA + 5 SEC WAIT + DELETE
     try:
-        await message.reply_sticker("CAACAgUAAxkBAAFD0UBpqDbTjoP_CXF7Ce6oZykP4r64jQACxAcAArligFU4dyG-LQJBjDoE")
+        stk = await message.reply_sticker("CAACAgUAAxkBAAFD0UBpqDbTjoP_CXF7Ce6oZykP4r64jQACxAcAArligFU4dyG-LQJBjDoE")
+        await asyncio.sleep(5) # 5 Second Wait Karega
+        await stk.delete()     # 5 Second baad delete kar dega
     except: pass
 
-    # 🔥 STEP 3: TERA PURANA LOADING ANIMATION
+    # 🔥 STEP 3: LOADING ANIMATION
     loading_1 = await message.reply_text(random.choice(GREET))
     await add_served_user(message.from_user.id)
     
@@ -112,6 +122,7 @@ async def start_pm(client, message: Message, _):
     await asyncio.sleep(0.1)
     await loading_1.delete()
     
+    # 🔥 STEP 4: FINAL START MESSAGE
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
@@ -176,7 +187,7 @@ async def start_pm(client, message: Message, _):
         
         caption_text = _["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM,served_users,served_chats)
         
-        # 🔥 STEP 4: MAGIC START MESSAGE (Flying Hearts + Colored Buttons)
+        # 🔥 STEP 4: YAHAN MAGIC START CALL HOGA BINA CRASH KIYE
         await send_magic_start(
             chat_id=message.chat.id,
             photo_url=random.choice(YUMI_PICS),
@@ -214,7 +225,6 @@ async def about_command(client: Client, message: Message):
         caption=PROMO
     )
 
-# 🔥 10 SECONDS SELF-DESTRUCTING WELCOME WITH CUSTOM EMOJIS & NO PHOTO
 @app.on_message(filters.new_chat_members, group=-1)
 async def welcome(client, message: Message):
     for member in message.new_chat_members:
@@ -227,7 +237,6 @@ async def welcome(client, message: Message):
                 except:
                     pass
             
-            # 🔥 CASE 1: Jab tera bot group mein join karta hai
             if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
                     await message.reply_text(_["start_4"])
@@ -251,31 +260,23 @@ async def welcome(client, message: Message):
                 
                 await add_served_chat(message.chat.id)
                 
-                # 10 Sec Delete Task
                 async def delete_bot_msg():
                     await asyncio.sleep(10)
-                    try:
-                        await run.delete()
-                    except:
-                        pass
+                    try: await run.delete()
+                    except: pass
                 asyncio.create_task(delete_bot_msg())
                 
                 await message.stop_propagation()
-            
-            # 🔥 CASE 2: Jab koi normal user group mein join karta hai
             else:
                 user_welcome = f"<emoji id='5413840936994097463'>🌺</emoji> <b>𝖶𝖾𝗅𝖼𝗈𝗆𝖾 𝖳𝗈 {message.chat.title}, {member.mention}!</b>"
                 run = await message.reply_text(text=user_welcome, disable_web_page_preview=True)
                 
-                # 10 Sec Delete Task
                 async def delete_user_msg():
                     await asyncio.sleep(10)
-                    try:
-                        await run.delete()
-                    except:
-                        pass
+                    try: await run.delete()
+                    except: pass
                 asyncio.create_task(delete_user_msg())
 
         except Exception as ex:
-            print(ex)
-                
+            pass
+            
