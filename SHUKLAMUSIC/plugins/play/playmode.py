@@ -28,18 +28,35 @@ def api_btn(text, callback_data=None, url=None, style=None, custom_emoji_id=None
 async def inject_premium_markup(chat_id, message_id, markup):
     try:
         url = f"https://api.telegram.org/bot{app.bot_token}/editMessageReplyMarkup"
-        payload = {"chat_id": chat_id, "message_id": message_id, "reply_markup": {"inline_keyboard": markup}}
+        payload = {"chat_id": chat_id, "message_id": message_id}
+        if markup:  # Only add if markup is not empty
+            payload["reply_markup"] = {"inline_keyboard": markup}
+            
         async with aiohttp.ClientSession() as session:
-            await session.post(url, json=payload)
-    except: pass
+            async with session.post(url, json=payload) as resp:
+                if resp.status != 200:
+                    print(f"❌ API Injection Error: {await resp.text()}")
+    except Exception as e: 
+        print(f"❌ Exception in inject_premium_markup: {e}")
 
-async def edit_premium_text(chat_id, message_id, text, markup):
+async def edit_premium_text(chat_id, message_id, text, markup=None):
     try:
         url = f"https://api.telegram.org/bot{app.bot_token}/editMessageText"
-        payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML", "reply_markup": {"inline_keyboard": markup}}
+        payload = {
+            "chat_id": chat_id, 
+            "message_id": message_id, 
+            "text": text, 
+            "parse_mode": "HTML"
+        }
+        if markup:  # Only add if markup is not empty
+            payload["reply_markup"] = {"inline_keyboard": markup}
+            
         async with aiohttp.ClientSession() as session:
-            await session.post(url, json=payload)
-    except: pass
+            async with session.post(url, json=payload) as resp:
+                if resp.status != 200:
+                    print(f"❌ API Edit Error: {await resp.text()}")
+    except Exception as e: 
+        print(f"❌ Exception in edit_premium_text: {e}")
 
 # ==========================================
 # 🎛️ PLAYMODE COMMAND (Cleaned)
@@ -259,4 +276,4 @@ async def livestop_cmd(client, message: Message):
     
     text = "<blockquote><b><emoji id='5998834801472182366'>🛑</emoji> sᴛʀᴇᴀᴍ & ᴘʀᴏᴄᴇssᴇs ᴋɪʟʟᴇᴅ!</b>\n<b><emoji id='6001483331709966655'>✅</emoji> ɢʜᴏsᴛ ᴘʀᴏxʏ ᴄʟᴇᴀʀᴇᴅ.</b></blockquote>"
     await message.reply_text(text)
-                                 
+    
