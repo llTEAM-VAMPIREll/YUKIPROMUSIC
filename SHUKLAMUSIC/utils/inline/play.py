@@ -68,9 +68,9 @@ def stream_markup_timer(_, chat_id, played, dur):
         [
             # 4 Premium Emoji Buttons (Play, Pause, Skip, Stop)
             api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
-            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="primary", custom_emoji_id="5427104474608974234"), 
-            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="primary", custom_emoji_id="5341270334882463507"), 
-            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="primary", custom_emoji_id="5343635672156623047"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5427104474608974234"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="Success", custom_emoji_id="5341270334882463507"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5343635672156623047"), 
         ],
         [
             # Mimi Tunes & Home (Dono Blue / Primary)
@@ -79,7 +79,7 @@ def stream_markup_timer(_, chat_id, played, dur):
         ],
         [
             # Privacy Policy
-            api_btn(text=" ᴘʀɪᴠᴀᴄʏ ᴘᴏʟɪᴄʏ ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="primary")
+            api_btn(text=" ᴘʀɪᴠᴀᴄʏ ᴘᴏʟɪᴄʏ ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="Success")
         ],
         [
             # Close Red
@@ -93,16 +93,16 @@ def stream_markup(_, chat_id):
         [
             # 4 Premium Emoji Buttons for Live Stream too
             api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
-            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="primary", custom_emoji_id="5427104474608974234"), 
-            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="primary", custom_emoji_id="5341270334882463507"), 
-            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="primary", custom_emoji_id="5343635672156623047"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5427104474608974234"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="Success", custom_emoji_id="5341270334882463507"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5343635672156623047"), 
         ],
         [
             api_btn(text=" ˹ ᴍɪᴍɪ ᴛᴜɴᴇs ˼ ♪ ", url="http://t.me/IAM_MIMBOT", style="primary"),
             api_btn(text=" ʜᴏᴍᴇ ", url=config.SUPPORT_CHAT, style="primary"),
         ],
         [
-            api_btn(text=" ᴘʀɪᴠᴀᴄʏ ᴘᴏʟɪᴄʏ ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="primary")
+            api_btn(text=" ᴘʀɪᴠᴀᴄʏ ᴘᴏʟɪᴄʏ ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="Success")
         ],
         [
             api_btn(text=_["CLOSE_BUTTON"], callback_data="close", style="danger")
