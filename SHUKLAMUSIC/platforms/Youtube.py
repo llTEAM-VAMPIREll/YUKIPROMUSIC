@@ -48,7 +48,7 @@ async def download_via_shruti(link: str, is_video: bool = False):
     ext = "mp4" if is_video else "mp3"
     file_path = os.path.join(folder, f"{video_id}.{ext}")
 
-    # Cache Check
+    # Cache Check (Agar song pehle se downloaded hai toh wahi play kar dega instantly)
     if os.path.exists(file_path):
         return file_path
 
@@ -63,7 +63,7 @@ async def download_via_shruti(link: str, is_video: bool = False):
                 token = data.get("download_token")
                 if not token: return None
 
-            # Step 2: Stream & Save
+            # Step 2: Stream & Save (Direct VPS Storage)
             stream_url = f"{api_url}/stream/{video_id}?type={req_type}"
             async with session.get(stream_url, headers={"X-Download-Token": token}, timeout=600) as resp:
                 if resp.status != 200: return None
@@ -241,7 +241,6 @@ class YouTubeAPI:
             print(f"API Failed, trying Fallback: {e}")
 
         # 2️⃣ Fallback (YT-DLP) - Agar API fail ho jaye tabhi chalega
-        # Render par ye fail hi hoga, but safety ke liye rakha hai.
         loop = asyncio.get_running_loop()
 
         def audio_dl():
@@ -279,4 +278,4 @@ class YouTubeAPI:
             downloaded_file = await loop.run_in_executor(None, audio_dl)
             
         return downloaded_file, direct
-                
+            
