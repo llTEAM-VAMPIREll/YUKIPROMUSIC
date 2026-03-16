@@ -8,7 +8,9 @@ from SHUKLAMUSIC import app
 # 🔥 RAW API HACK FOR PREMIUM BUTTONS 🔥
 # ==========================================
 async def raw_edit_message(chat_id, message_id, caption, markup):
-    token = getattr(config, "BOT_TOKEN", getattr(app, "bot_token", None))
+    # 🔥 FIX: Seedha config se token lo. Agar nahi mil raha toh tera as a string daal de.
+    token = config.BOT_TOKEN
+    
     url = f"https://api.telegram.org/bot{token}/editMessageCaption"
     payload = {
         "chat_id": chat_id,
@@ -19,22 +21,14 @@ async def raw_edit_message(chat_id, message_id, caption, markup):
     }
     try:
         async with aiohttp.ClientSession() as session:
-            await session.post(url, json=payload)
+            async with session.post(url, json=payload) as response:
+                # Debugging ke liye error print karana zaroori hai
+                if response.status != 200:
+                    err = await response.text()
+                    print(f"❌ Telegram API Error: {err}")
     except Exception as e:
-        print(f"API Error: {e}")
-
-def api_btn(text, callback_data=None, url=None, style="primary", custom_emoji_id=None):
-    btn = {"text": text}
-    if callback_data:
-        btn["callback_data"] = callback_data
-    if url:
-        btn["url"] = url
-    if style:
-        btn["style"] = style  
-    if custom_emoji_id:
-        btn["icon_custom_emoji_id"] = str(custom_emoji_id) 
-    return btn
-
+        print(f"❌ Request Error: {e}")
+        
 # ==========================================
 # 📊 REAL GITHUB STATS FETCHER 
 # ==========================================
