@@ -91,7 +91,7 @@ async def promote_me(client, message: Message):
             )
         )
         # 🔥 Direct send (No Reply)
-        await client.send_message(message.chat.id, "<blockquote><emoji id='6334381440754517833'>👑</emoji> <b>ʙᴏꜱꜱ ɪꜱ ʜᴇʀᴇ!</b></blockquote>\n\n<emoji id='6334696528145286813'>⚡</emoji> ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴘʀᴏᴍᴏᴛᴇᴅ ʏᴏᴜ ᴛᴏ <b>ꜰᴜʟʟ ᴀᴅᴍɪɴ</b> ɪɴ ᴛʜɪꜱ ɢʀᴏᴜᴘ.", parse_mode=enums.ParseMode.HTML)
+        await client.send_message(message.chat.id, "<blockquote><emoji id='6334381440754517833'>👑</emoji> <b>ʙᴏꜱꜱ ɪꜱ ʜᴇʀᴇ!</b></blockquote>\n\n<emoji id='6334696528145286813'>⚡</emoji> ꜱᴜᴄᴄᴇꜱꜰᴜʟʟʏ ᴘʀᴏᴍᴏᴛᴇᴅ ʏᴏᴜ ᴛᴏ <b>ꜰᴜʟʟ ᴀᴅᴍɪɴ</b> ɪɴ ᴛʜɪꜱ ɢʀᴏᴜᴘ.", parse_mode=enums.ParseMode.HTML)
     except Exception as e:
         await client.send_message(message.chat.id, f"❌ <b>ꜰᴀɪʟᴇᴅ ᴛᴏ ᴘʀᴏᴍᴏᴛᴇ:</b> <code>{e}</code>\n<i>(Make sure bot is admin with add_admin rights)</i>", parse_mode=enums.ParseMode.HTML)
 
@@ -172,16 +172,15 @@ async def send_my_info(client, message: Message):
     except:
         pass
         
-    # 🔥 Fetch Real Telegram Profile Pic
+    # 🔥 Fetch Real Telegram Profile Pic the RIGHT way
+    REAL_PROFILE_PIC = "https://telegra.ph/file/8b383eb685ed1d8f1e626.jpg" # Default fallback
     try:
-        user_info = await client.get_users(message.from_user.id)
-        if user_info.photo:
-            REAL_PROFILE_PIC = user_info.photo.big_file_id
-        else:
-            # Fallback agar DP hidden ya removed hai
-            REAL_PROFILE_PIC = "https://telegra.ph/file/8b383eb685ed1d8f1e626.jpg"
-    except:
-        REAL_PROFILE_PIC = "https://telegra.ph/file/8b383eb685ed1d8f1e626.jpg"
+        # User ki profile photos nikalna (Sendable format mein)
+        async for photo in client.get_chat_photos(message.from_user.id, limit=1):
+            REAL_PROFILE_PIC = photo.file_id
+            break
+    except Exception as e:
+        print(f"DP Fetch Error: {e}")
         
     # 🔥 Direct send (No Reply)
     msg = await client.send_photo(
