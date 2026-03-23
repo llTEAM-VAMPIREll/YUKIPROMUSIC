@@ -87,7 +87,7 @@ async def get_groq_response(messages_list, api_key):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {
-        "model": "llama-3.1-70b-versatile",
+        "model": "llama-3.1-8b-instant",
         "messages": messages_list,
         "temperature": 0.8,
         "max_tokens": 512
