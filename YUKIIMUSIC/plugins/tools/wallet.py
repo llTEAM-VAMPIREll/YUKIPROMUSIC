@@ -4,7 +4,7 @@ import math
 import aiohttp
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.enums import ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus, ParseMode
 
 import config
 from YUKIIMUSIC import app
@@ -48,11 +48,15 @@ async def inject_premium_markup(chat_id, message_id, markup):
         print(f"❌ Markup Injection Error: {e}")
 
 # --- HELPER FUNCTIONS ---
-async def get_wallet(chat_id):
+async def get_wallet(chat_id, title="Unknown Group"):
     wallet = await wallet_db.find_one({"chat_id": chat_id})
     if not wallet:
-        wallet = {"chat_id": chat_id, "points": 0, "history": []}
+        wallet = {"chat_id": chat_id, "title": title, "points": 0, "history": []}
         await wallet_db.insert_one(wallet)
+    # Update title to keep it fresh
+    if wallet.get("title") != title:
+        await wallet_db.update_one({"chat_id": chat_id}, {"$set": {"title": title}})
+        wallet["title"] = title
     return wallet
 
 async def add_transaction(chat_id, log_msg):
@@ -68,7 +72,7 @@ async def trigger_smm_reward(client, message: Message, chat_id):
     
     me = await chat.get_member(client.me.id)
     if me.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-        await message.reply(f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('Reward unlocked! But I am not an admin in this group, so I cannot add members. Make me an admin and try again!')}")
+        await client.send_message(chat_id, f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('Reward unlocked! But I am not an admin in this group, so I cannot add members. Make me an admin and try again!')}")
         return False
 
     link = f"https://t.me/{chat.username}" if chat.username else chat.invite_link
@@ -87,11 +91,11 @@ async def trigger_smm_reward(client, message: Message, chat_id):
             async with session.post(SMM_API_URL, data=payload) as resp:
                 result = await resp.json()
                 if "error" in result:
-                    await message.reply(f"<emoji id='6073371665381724173'>⚠️</emoji> {smallcaps('API Error:')} {result['error']}")
+                    await client.send_message(chat_id, f"<emoji id='6073371665381724173'>⚠️</emoji> {smallcaps('API Error:')} {result['error']}")
                     return False
     except Exception as e:
         print(f"SMM API Error: {e}")
-        await message.reply(f"<emoji id='6073371665381724173'>⚠️</emoji> {smallcaps('Unable to connect to the SMM panel.')}")
+        await client.send_message(chat_id, f"<emoji id='6073371665381724173'>⚠️</emoji> {smallcaps('Unable to connect to the SMM panel.')}")
         return False
 
     total_members = chat.members_count
@@ -117,10 +121,13 @@ async def trigger_smm_reward(client, message: Message, chat_id):
 
 # --- COMMANDS ---
 
-@app.on_message(filters.command(["wallet", "gcwallet", "gcbal"], prefixes=["/", "."]) & filters.group)
+@app.on_message(filters.command(["wallet", "gcwallet", "gcbal"], prefixes=["/", ".", "!"]) & filters.group)
 async def check_wallet(client, message: Message):
     chat_id = message.chat.id
-    wallet = await get_wallet(chat_id)
+    try: await message.delete()
+    except: pass
+    
+    wallet = await get_wallet(chat_id, message.chat.title)
     
     text = f"<emoji id='6073552504979722691'>🏦</emoji> **{smallcaps(message.chat.title)} {smallcaps('Group Wallet')}**\n"
     text += f"<emoji id='6071348606936289251'>🆔</emoji> {smallcaps('Wallet ID:')} `{chat_id}`\n"
@@ -134,25 +141,30 @@ async def check_wallet(client, message: Message):
         for log in reversed(wallet["history"]):
             text += f"➥ {log}\n"
             
-    await message.reply(text)
+    await client.send_message(chat_id, text)
 
-@app.on_message(filters.command(["donate"], prefixes=["/", "."]) & filters.group)
+@app.on_message(filters.command(["donate"], prefixes=["/", ".", "!"]) & filters.group)
 async def donate_points(client, message: Message):
+    chat_id = message.chat.id
+    try: await message.delete()
+    except: pass
+
     if len(message.command) < 2:
-        return await message.reply(smallcaps("How to use: /donate [amount] or .donate [amount]"))
+        return await client.send_message(chat_id, smallcaps("How to use: /donate [amount] or .donate [amount]"))
     
     try: amount = int(message.command[1])
-    except: return await message.reply(smallcaps("Enter the amount in numbers!"))
+    except: return await client.send_message(chat_id, smallcaps("Enter the amount in numbers!"))
     
-    if amount <= 0: return await message.reply(smallcaps("Enter a valid amount!"))
+    if amount <= 0: return await client.send_message(chat_id, smallcaps("Enter a valid amount!"))
         
     user_id = message.from_user.id
     user_data = await game_db.find_one({"user_id": user_id})
     
     if not user_data or user_data.get("points", 0) < amount:
-        return await message.reply(f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('You do not have enough points!')}")
+        return await client.send_message(chat_id, f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('You do not have enough points!')}")
         
-    chat_id = message.chat.id
+    # Ensure wallet is tracked with title
+    await get_wallet(chat_id, message.chat.title)
     
     # Calculate 2% fee
     fee = math.ceil(amount * 0.02)
@@ -171,40 +183,47 @@ async def donate_points(client, message: Message):
         f"<emoji id='6073321555998282076'>💰</emoji> {smallcaps('Added to GC:')} {final_amount}"
     )
     
-    await message.reply(reply_text)
+    await client.send_message(chat_id, reply_text)
     
-    new_wallet = await get_wallet(chat_id)
+    new_wallet = await get_wallet(chat_id, message.chat.title)
     if new_wallet["points"] >= TARGET_POINTS:
         await trigger_smm_reward(client, message, chat_id)
 
-@app.on_message(filters.command(["gtransfer"], prefixes=["/", "."]) & filters.group)
+@app.on_message(filters.command(["gtransfer"], prefixes=["/", ".", "!"]) & filters.group)
 async def transfer_to_other_gc(client, message: Message):
+    chat_id = message.chat.id
+    try: await message.delete()
+    except: pass
+
     if len(message.command) < 3:
-        return await message.reply(smallcaps("How to use: /gtransfer [Target_Wallet_ID] [Amount]"))
+        return await client.send_message(chat_id, smallcaps("How to use: /gtransfer [Target_Wallet_ID] [Amount]"))
         
     try: 
         target_chat_id = int(message.command[1])
         amount = int(message.command[2])
-    except: return await message.reply(smallcaps("Incorrect format!"))
+    except: return await client.send_message(chat_id, smallcaps("Incorrect format!"))
     
-    if amount <= 0: return await message.reply(smallcaps("Enter a valid amount!"))
+    if amount <= 0: return await client.send_message(chat_id, smallcaps("Enter a valid amount!"))
     
     user_id = message.from_user.id
     user_data = await game_db.find_one({"user_id": user_id})
     
     if not user_data or user_data.get("points", 0) < amount:
-        return await message.reply(f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('You do not have enough points!')}")
+        return await client.send_message(chat_id, f"<emoji id='6073371665381724173'>❌</emoji> {smallcaps('You do not have enough points!')}")
         
     fee = math.ceil(amount * 0.03)
     final_amount = amount - fee
     
     await game_db.update_one({"user_id": user_id}, {"$inc": {"points": -amount}})
+    
+    # Ensure target wallet exists
+    await get_wallet(target_chat_id)
     await wallet_db.update_one({"chat_id": target_chat_id}, {"$inc": {"points": final_amount}}, upsert=True)
     
     sender_name = smallcaps(message.from_user.first_name)
     await add_transaction(target_chat_id, f"<emoji id='6073321555998282076'>💸</emoji> {smallcaps('Received')} {final_amount} {smallcaps('pts from')} {sender_name} ({smallcaps('3% tax cut')})")
     
-    await message.reply(f"<emoji id='6073423432622544061'>✅</emoji> {smallcaps('Transfer Successful!')}\n\n<emoji id='6073321555998282076'>💸</emoji> {smallcaps('Sent:')} {amount}\n<emoji id='6073165416757203109'>📉</emoji> {smallcaps('3% Tax:')} {fee}\n<emoji id='6073117703965511893'>🎯</emoji> {smallcaps('Target GC received:')} {final_amount}")
+    await client.send_message(chat_id, f"<emoji id='6073423432622544061'>✅</emoji> {smallcaps('Transfer Successful!')}\n\n<emoji id='6073321555998282076'>💸</emoji> {smallcaps('Sent:')} {amount}\n<emoji id='6073165416757203109'>📉</emoji> {smallcaps('3% Tax:')} {fee}\n<emoji id='6073117703965511893'>🎯</emoji> {smallcaps('Target GC received:')} {final_amount}")
     
     target_wallet = await get_wallet(target_chat_id)
     if target_wallet["points"] >= TARGET_POINTS:
@@ -217,14 +236,18 @@ async def transfer_to_other_gc(client, message: Message):
 
 @app.on_message(filters.command(["bal", "balance", "mybal", "mybalance"], prefixes=["/", ".", "!"]) & filters.group)
 async def check_user_balance(client, message: Message):
-    # Check if replied to a user or checking own balance
+    chat_id = message.chat.id
+    
     if message.reply_to_message:
         target_user = message.reply_to_message.from_user
     else:
         target_user = message.from_user
+        
+    try: await message.delete()
+    except: pass
 
     if not target_user:
-        return await message.reply(smallcaps("User not found!"))
+        return await client.send_message(chat_id, smallcaps("User not found!"))
 
     is_self = (target_user.id == message.from_user.id)
     user_data = await game_db.find_one({"user_id": target_user.id})
@@ -234,7 +257,7 @@ async def check_user_balance(client, message: Message):
 
     # Privacy Check
     if not is_self and is_hidden:
-        return await message.reply(f"<emoji id='6073371665381724173'>❌</emoji> **{smallcaps('Privacy Alert:')}** {smallcaps('This user has hidden their balance from others!')}")
+        return await client.send_message(chat_id, f"<emoji id='6073371665381724173'>❌</emoji> **{smallcaps('Privacy Alert:')}** {smallcaps('This user has hidden their balance from others!')}")
 
     # UI Formatting
     user_name = smallcaps(target_user.first_name)
@@ -247,22 +270,23 @@ async def check_user_balance(client, message: Message):
         f"<emoji id='6071046056555058251'>💖</emoji> *{smallcaps('Earn more points by playing mini-games!')}*"
     )
     
-    await message.reply(text)
-
+    await client.send_message(chat_id, text)
 
 @app.on_message(filters.command(["hide", "hidebal", "unhide", "unhidebal"], prefixes=["/", ".", "!"]) & filters.group)
 async def toggle_privacy(client, message: Message):
+    chat_id = message.chat.id
+    try: await message.delete()
+    except: pass
+
     user_id = message.from_user.id
     user_data = await game_db.find_one({"user_id": user_id})
     
-    # Agar user pehli baar command chala raha hai aur DB mein nahi hai, toh add kar do
     if not user_data:
         await game_db.insert_one({"user_id": user_id, "name": message.from_user.first_name, "points": 0, "hidden": False})
         current_status = False
     else:
         current_status = user_data.get("hidden", False)
 
-    # Command ke hisaab se logic (hide/unhide)
     command = message.command[0].lower()
     
     if command in ["hide", "hidebal"]:
@@ -272,12 +296,66 @@ async def toggle_privacy(client, message: Message):
         new_status = False
         reply_msg = f"<emoji id='6073423432622544061'>✅</emoji> {smallcaps('Done! Your balance is now')} **{smallcaps('VISIBLE')}** {smallcaps('to everyone.')} <emoji id='6071252777625981483'>🚀</emoji>"
     
-    # Agar already same status hai toh faltu update mat karo
     if current_status == new_status:
-        return await message.reply(f"<emoji id='6073117703965511893'>🎯</emoji> {smallcaps('Your balance is already')} {'hidden' if new_status else 'visible'}!")
+        return await client.send_message(chat_id, f"<emoji id='6073117703965511893'>🎯</emoji> {smallcaps('Your balance is already')} {'hidden' if new_status else 'visible'}!")
 
-    # Update database
     await game_db.update_one({"user_id": user_id}, {"$set": {"hidden": new_status}})
+    await client.send_message(chat_id, reply_msg)
+
+# ==========================================
+#        TOP GROUPS LEADERBOARD
+# ==========================================
+
+@app.on_message(filters.command(["topgroups", "gctop"], prefixes=["/", ".", "!"]) & filters.group)
+async def top_groups_leaderboard(client, message: Message):
+    chat_id = message.chat.id
+    try: await message.delete()
+    except: pass
+
+    top_wallets = wallet_db.find().sort("points", -1).limit(10)
     
-    await message.reply(reply_msg)
+    text = f"<emoji id='6073117703965511893'>🏆</emoji> **{smallcaps('Top 10 Richest Groups')}** <emoji id='6073117703965511893'>🏆</emoji>\n\n"
+    count, has_groups = 1, False
     
+    async for wallet in top_wallets:
+        has_groups = True
+        title = smallcaps(wallet.get("title", "Unknown Group"))
+        points = wallet.get("points", 0)
+        text += f"**{count}.** {title} - `{points}` {smallcaps('points')}\n"
+        count += 1
+        
+    if not has_groups:
+        text += smallcaps("No groups have started earning points yet!")
+        
+    await client.send_message(chat_id, text)
+
+# ==========================================
+#        GAME & ECONOMY HELP
+# ==========================================
+
+@app.on_message(filters.command(["gamehelp", "helpgame"], prefixes=["/", ".", "!"]) & filters.group)
+async def game_economy_help(client, message: Message):
+    chat_id = message.chat.id
+    try: await message.delete()
+    except: pass
+
+    help_text = f"""
+<emoji id='6071252777625981483'>🚀</emoji> **{smallcaps('Economy & Mini-Games Help')}** <emoji id='6071252777625981483'>🚀</emoji>
+
+<blockquote><emoji id='6073552504979722691'>🏦</emoji> <b>{smallcaps('Wallet Commands')}</b>
+• <code>/wallet</code> - {smallcaps('Check the group balance and transactions')}
+• <code>/donate [amount]</code> - {smallcaps('Donate your points to the group')} (2% {smallcaps('fee')})
+• <code>/gtransfer [ID] [amount]</code> - {smallcaps('Send points to another group')} (3% {smallcaps('fee')})
+• <code>/topgroups</code> - {smallcaps('View the global group leaderboard')}
+</blockquote>
+
+<blockquote><emoji id='6071348606936289251'>👤</emoji> <b>{smallcaps('Personal Commands')}</b>
+• <code>/bal</code> - {smallcaps('Check your current points balance')}
+• <code>/hide</code> - {smallcaps('Hide your balance from others')}
+• <code>/unhide</code> - {smallcaps('Make your balance visible again')}
+</blockquote>
+
+<emoji id='6071046056555058251'>💖</emoji> *{smallcaps('Reach 5000 points in your group wallet to unlock a massive member reward!')}*
+"""
+    await client.send_message(chat_id, help_text, parse_mode=ParseMode.HTML)
+        
