@@ -24,7 +24,7 @@ USER_LAST_MESSAGE = {} # Repeated words check karne ke liye
 BLOCKED_USERS = {}
 spam_lock = asyncio.Lock() 
 
-SPAM_THRESHOLD = 7 
+SPAM_THRESHOLD = 5 
 SPAM_WINDOW = 2 
 BLOCK_DURATION = 1200 
 REPEAT_THRESHOLD = 6 
