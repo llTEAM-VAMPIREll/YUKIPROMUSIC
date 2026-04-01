@@ -36,7 +36,6 @@ def get_sound_panel(chat_id):
     ])
 
 def generate_vol_bar(vol):
-    # Generates a dynamic volume bar from 10 to 200%
     filled = vol // 20
     empty = 10 - filled
     return "▰" * filled + "▱" * empty
@@ -94,7 +93,6 @@ def command(commands: Union[str, List[str]]):
     return filters.command(commands, "")
 
 
-  ################################################
 async def get_group_call(
     client: Client, message: Message, err_msg: str = ""
 ) -> Optional[InputGroupCall]:
@@ -235,28 +233,33 @@ async def stop_group_call(c: Client, m: Message):
 # ==================================================
 # 🔥 NEW FEATURE: SET VC NAME (VC Title Changer) 🔥
 # ==================================================
-@app.on_message(filters.command(["setvcname"], ["/", ".", "!"]))
+@app.on_message(filters.command(["setvcname", "vctag", "vcname"], ["/", ".", "!"]))
 async def set_vc_name_cmd(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply("<blockquote><emoji id='6334648089504122382'>❌</emoji> ʙʜᴀɪ, ᴠᴄ ᴋᴀ ɴᴀʏᴀ ɴᴀᴀᴍ ʙʜɪ ᴛᴏʜ ʙᴀᴛᴀ!\n**ᴇxᴀᴍᴘʟᴇ:** `/setvcname 🍷 ʟᴀᴛᴇ ɴɪɢʜᴛ ᴠɪʙᴇꜱ`</blockquote>")
+        return await message.reply("<blockquote><emoji id='6334648089504122382'>❌</emoji> ʙʜᴀɪ, ᴠᴄ ᴋᴀ ɴᴀʏᴀ ɴᴀᴀᴍ ʙʜɪ ᴛᴏʜ ʙᴀᴛᴀ!\n**ᴇxᴀᴍᴘʟᴇ:** `/vctag 🍷 ʟᴀᴛᴇ ɴɪɢʜᴛ ᴠɪʙᴇꜱ`</blockquote>")
     
     chat_id = message.chat.id
     title = message.text.split(None, 1)[1]
-    assistant = await get_assistant(chat_id)
-    
-    if assistant is None:
-        return await message.reply("<blockquote><emoji id='6334333036473091884'>⚠️</emoji> ᴀꜱꜱɪꜱᴛᴀɴᴛ ɴᴀʜɪ ᴍɪʟᴀ ʙʜᴀɪ.</blockquote>")
         
     msg = await message.reply("<blockquote><emoji id='6334696528145286813'>⏳</emoji> ᴄʜᴀɴɢɪɴɢ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴛɪᴛʟᴇ..</blockquote>")
     try:
-        group_call = await get_group_call(assistant, message, err_msg="ᴠᴄ ᴄʜᴀʟᴜ ɴᴀʜɪ ʜᴀɪ ʙʜᴀɪ.")
-        if not group_call:
-            return await msg.edit_text("<blockquote><emoji id='6334648089504122382'>❌</emoji> ᴘᴇʜʟᴇ ᴠᴄ ᴛᴏʜ ᴄʜᴀʟᴜ ᴋᴀʀ ʟᴇ!</blockquote>")
+        peer = await client.resolve_peer(chat_id)
+        if isinstance(peer, InputPeerChannel):
+            full_chat = (await client.invoke(GetFullChannel(channel=peer))).full_chat
+        elif isinstance(peer, InputPeerChat):
+            full_chat = (await client.invoke(GetFullChat(chat_id=peer.chat_id))).full_chat
+        else:
+            return await msg.edit_text("<blockquote><emoji id='6334648089504122382'>❌</emoji> ʏᴇ ɢʀᴏᴜᴘ ᴠᴀʟɪᴅ ɴᴀʜɪ ʜᴀɪ.</blockquote>")
             
-        await assistant.invoke(EditGroupCallTitle(call=group_call, title=title))
+        if not full_chat or not full_chat.call:
+            return await msg.edit_text("<blockquote><emoji id='6334648089504122382'>❌</emoji> ᴘᴇʜʟᴇ ᴠᴄ ᴛᴏʜ ᴄʜᴀʟᴜ ᴋᴀʀ ʟᴇ ʙʜᴀɪ!</blockquote>")
+            
+        group_call = full_chat.call
+        
+        await client.invoke(EditGroupCallTitle(call=group_call, title=title))
         await msg.edit_text(f"<blockquote><emoji id='6334381440754517833'>✨</emoji> ᴠᴄ ᴛɪᴛʟᴇ ꜱᴇᴛ ᴛᴏ:\n**{title}**</blockquote>")
     except ChatAdminRequired:
-        await msg.edit_text("<blockquote><emoji id='6334471179801200139'>⚠️</emoji> ʙʜᴀɪ, ᴀꜱꜱɪꜱᴛᴀɴᴛ ɪᴅ ᴋᴏ **'ᴍᴀɴᴀɢᴇ ᴠɪᴅᴇᴏ ᴄʜᴀᴛꜱ'** ᴋɪ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴅᴇ ᴘᴇʜʟᴇ!</blockquote>")
+        await msg.edit_text("<blockquote><emoji id='6334471179801200139'>⚠️</emoji> ʙʜᴀɪ, **ᴍᴀɪɴ ʙᴏᴛ** ᴋᴏ 'ᴍᴀɴᴀɢᴇ ᴠɪᴅᴇᴏ ᴄʜᴀᴛꜱ' ᴋɪ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴅᴇ ᴘᴇʜʟᴇ! ᴀꜱꜱɪꜱᴛᴀɴᴛ ᴋɪ ᴢᴀʀᴏᴏʀᴀᴛ ɴᴀʜɪ ʜᴀɪ ᴀʙ.</blockquote>")
     except Exception as e:
         await msg.edit_text(f"<blockquote><emoji id='6334648089504122382'>❌</emoji> ᴇʀʀᴏʀ ᴀᴀɢᴀʏᴀ: {e}</blockquote>")
 
@@ -285,7 +288,6 @@ async def vc_sound_callback(client: Client, cq: CallbackQuery):
     if cq.message.chat.id != chat_id:
         return await cq.answer("ʙʜᴀɪ ʏᴇ ᴘᴀɴᴇʟ ɪꜱ ᴄʜᴀᴛ ᴋᴀ ɴᴀʜɪ ʜᴀɪ!", show_alert=True)
         
-    # State set karna
     if chat_id not in vc_data:
         vc_data[chat_id] = {"vol": 100, "muted": False}
         
@@ -316,7 +318,6 @@ async def vc_sound_callback(client: Client, cq: CallbackQuery):
             await YUKII.change_volume_call(chat_id, state["vol"])
             await cq.answer(f"ᴠᴏʟᴜᴍᴇ ᴋᴀᴍ ᴋᴀʀ ᴅɪ: {state['vol']}% 📉")
 
-        # Update Message Text with dynamic Volume Bar & Blockquote
         vol = state["vol"]
         bar = generate_vol_bar(vol)
         text = f"<blockquote><emoji id='6334598469746952256'>🎛</emoji> **ᴠᴄ ꜱᴏᴜɴᴅ ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ**\n\n<emoji id='6334672948774831861'>🔊</emoji> ᴠᴏʟᴜᴍᴇ: {vol}%\n{bar}</blockquote>"
@@ -327,4 +328,4 @@ async def vc_sound_callback(client: Client, cq: CallbackQuery):
         await cq.answer("ʙʜᴀɪ ᴘᴇʜʟᴇ ᴠᴄ ᴍᴇ ɢᴀᴀɴᴀ ᴛᴏʜ ᴘʟᴀʏ ᴋᴀʀ ʟᴇ! 🤦‍♂️", show_alert=True)
     except Exception as e:
         await cq.answer(f"ᴛʜᴏᴅᴀ ᴡᴀɪᴛ ᴋᴀʀ ʏᴀ ᴇʀʀᴏʀ ᴅᴇᴋʜ: {str(e)[:50]}", show_alert=True)
-             
+        
