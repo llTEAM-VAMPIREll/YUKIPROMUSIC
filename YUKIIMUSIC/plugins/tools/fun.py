@@ -63,7 +63,10 @@ async def slap_cmd(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("who do you want to slap? reply to their message."))
     
     target_msg_id = message.reply_to_message.id
@@ -73,7 +76,10 @@ async def slap_cmd(client, message: Message):
     
     caption = f"{sender} {smallcaps('slapped')} {receiver} {smallcaps('hard')}! 💥"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_animation(chat_id, animation=gif, caption=caption, reply_to_message_id=target_msg_id)
 
 @app.on_message(filters.command(["kiss"], prefixes=["/", ".", "!"]))
@@ -82,7 +88,10 @@ async def kiss_cmd(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("reply to someone to kiss them."))
     
     target_msg_id = message.reply_to_message.id
@@ -92,7 +101,10 @@ async def kiss_cmd(client, message: Message):
     
     caption = f"{sender} {smallcaps('gave')} {receiver} {smallcaps('a sweet kiss')}. 💋"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_animation(chat_id, animation=gif, caption=caption, reply_to_message_id=target_msg_id)
 
 @app.on_message(filters.command(["hug"], prefixes=["/", ".", "!"]))
@@ -101,7 +113,10 @@ async def hug_cmd(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("who do you want to hug? reply to their message."))
     
     target_msg_id = message.reply_to_message.id
@@ -111,7 +126,10 @@ async def hug_cmd(client, message: Message):
     
     caption = f"{sender} {smallcaps('gave')} {receiver} {smallcaps('a tight hug')}. 🫂"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_animation(chat_id, animation=gif, caption=caption, reply_to_message_id=target_msg_id)
 
 @app.on_message(filters.command(["handsup", "handup"], prefixes=["/", ".", "!"]))
@@ -120,7 +138,10 @@ async def handsup_cmd(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("who are you telling to put their hands up? reply to them."))
     
     target_msg_id = message.reply_to_message.id
@@ -130,7 +151,10 @@ async def handsup_cmd(client, message: Message):
     
     caption = f"ʜᴇʏ {receiver}! {sender} {smallcaps('said hands up! put your hands in the air')}. 👐"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_animation(chat_id, animation=gif, caption=caption, reply_to_message_id=target_msg_id)
 
 @app.on_message(filters.command(["gojo"], prefixes=["/", ".", "!"]))
@@ -138,7 +162,10 @@ async def gojo_cmd(client, message: Message):
     chat_id = message.chat.id
     gif = random.choice(GOJO_GIFS)
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_animation(chat_id, animation=gif, caption=smallcaps("gojo satoru in the house! 😎"))
 
 # ─────────────────────────────
@@ -153,7 +180,10 @@ async def stupid_meter(client, message: Message):
     percentage = random.randint(0, 100)
     text = f"**{smallcaps('Stupid Meter')}**\n\n{target.mention} {smallcaps('is')} **{percentage}%** {smallcaps('stupid')}. 📉"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     
     if target_msg_id:
         await client.send_message(chat_id, text, reply_to_message_id=target_msg_id)
@@ -166,7 +196,10 @@ async def crush_meter(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("reply to someone to check your crush meter."))
     
     target_msg_id = message.reply_to_message.id
@@ -176,7 +209,10 @@ async def crush_meter(client, message: Message):
     
     text = f"**{smallcaps('Crush Meter')}**\n\n{sender} {smallcaps('and')} {receiver}'s {smallcaps('crush compatibility is')} **{percentage}%**. 💘"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_message(chat_id, text, reply_to_message_id=target_msg_id)
 
 @app.on_message(filters.command(["love", "lovemeter", "lovemittar"], prefixes=["/", ".", "!"]))
@@ -185,7 +221,10 @@ async def love_meter(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("reply to your partner to check the love meter."))
     
     target_msg_id = message.reply_to_message.id
@@ -195,7 +234,10 @@ async def love_meter(client, message: Message):
     
     text = f"**{smallcaps('Love Meter')}**\n\n{smallcaps('the love between')} {sender} {smallcaps('and')} {receiver} {smallcaps('is')} **{percentage}%**. ❤️"
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_message(chat_id, text, reply_to_message_id=target_msg_id)
 
 # ─────────────────────────────
@@ -207,11 +249,17 @@ async def propose_cmd(client, message: Message):
     chat_id = message.chat.id
     
     if not target:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("reply to someone to propose to them."))
     
     if target.id == message.from_user.id:
-        try: await message.delete() except: pass
+        try:
+            await message.delete()
+        except:
+            pass
         return await client.send_message(chat_id, smallcaps("are you trying to propose to yourself?"))
 
     target_msg_id = message.reply_to_message.id
@@ -227,7 +275,10 @@ async def propose_cmd(client, message: Message):
         ]
     ])
     
-    try: await message.delete() except: pass
+    try:
+        await message.delete()
+    except:
+        pass
     await client.send_message(chat_id, text, reply_markup=buttons, reply_to_message_id=target_msg_id)
 
 @app.on_callback_query(filters.regex(r"^prop_"))
