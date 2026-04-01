@@ -231,7 +231,7 @@ async def transfer_to_other_gc(client, message: Message):
         except: pass
       
 # ==========================================
-#        BALANCE & PRIVACY COMMANDS
+#        UPDATED BALANCE & PRIVACY COMMANDS
 # ==========================================
 
 @app.on_message(filters.command(["bal", "balance", "mybal", "mybalance"], prefixes=["/", ".", "!"]) & filters.group)
@@ -253,22 +253,39 @@ async def check_user_balance(client, message: Message):
     user_data = await game_db.find_one({"user_id": target_user.id})
     
     points = user_data.get("points", 0) if user_data else 0
+    kills = user_data.get("kills", 0) if user_data else 0
+    xp = user_data.get("xp", 0) if user_data else 0
     is_hidden = user_data.get("hidden", False) if user_data else False
 
     # Privacy Check
     if not is_self and is_hidden:
         return await client.send_message(chat_id, f"<emoji id='6073371665381724173'>❌</emoji> **{smallcaps('Privacy Alert:')}** {smallcaps('This user has hidden their balance from others!')}")
 
+    # Calculate Global Rank
+    rank = await game_db.count_documents({"points": {"$gt": points}}) + 1
+    
+    # Status Logic
+    current_time = time.time()
+    protected_until = user_data.get("protected_until", 0) if user_data else 0
+    dead_until = user_data.get("dead_until", 0) if user_data else 0
+    
+    if current_time < dead_until:
+        status_str = "dead 💀"
+    elif current_time < protected_until:
+        status_str = "protected 🛡️"
+    else:
+        status_str = "alive ❤️"
+
     # UI Formatting
     user_name = smallcaps(target_user.first_name)
-    status_msg = f" (<emoji id='6073165416757203109'>👻</emoji> {smallcaps('Hidden')})" if (is_self and is_hidden) else ""
+    hidden_status = f" (👻 {smallcaps('Hidden')})" if (is_self and is_hidden) else ""
 
-    text = (
-        f"<emoji id='6073552504979722691'>🏦</emoji> **{user_name}'s {smallcaps('Bank')}**\n\n"
-        f"<emoji id='6073321555998282076'>💰</emoji> **{smallcaps('Total Points:')}** `{points}`\n"
-        f"<emoji id='6071348606936289251'>🆔</emoji> **{smallcaps('User ID:')}** `{target_user.id}`{status_msg}\n\n"
-        f"<emoji id='6071046056555058251'>💖</emoji> *{smallcaps('Earn more points by playing mini-games!')}*"
-    )
+    text = f"👤 Nᴀᴍᴇ: {user_name}{hidden_status}\n"
+    text += f"💰 Bᴀʟᴀɴᴄᴇ: ${points}\n"
+    text += f"🏆 Gʟᴏʙᴀʟ Rᴀɴᴋ: {rank}\n"
+    text += f"❤️ Sᴛᴀᴛᴜꜱ: {status_str}\n"
+    text += f"⚔️ Kɪʟʟꜱ: {kills}\n"
+    text += f"🐣 Rᴏᴏᴋɪᴇ: {xp}/1000\n"
     
     await client.send_message(chat_id, text)
 
@@ -358,4 +375,4 @@ async def game_economy_help(client, message: Message):
 <emoji id='6071046056555058251'>💖</emoji> *{smallcaps('Reach 5000 points in your group wallet to unlock a massive member reward!')}*
 """
     await client.send_message(chat_id, help_text, parse_mode=ParseMode.HTML)
-        
+    
