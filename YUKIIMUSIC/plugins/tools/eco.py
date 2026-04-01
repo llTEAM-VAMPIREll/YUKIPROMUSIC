@@ -16,6 +16,7 @@ from YUKIIMUSIC.misc import mongodb
 # --- DATABASE COLLECTIONS ---
 game_db = mongodb["wordgame_leaderboard"]
 eco_db = mongodb["eco_settings"] 
+wallet_db = mongodb["group_wallets"] # Added for group eco ranks
 
 # --- AESTHETIC SMALL CAPS TEXT CONVERTER ---
 def smallcaps(text):
@@ -84,6 +85,71 @@ async def toggle_economy(client, message: Message):
     elif cmd in ["off", "disable"]:
         await eco_db.update_one({"chat_id": chat_id}, {"$set": {"enabled": False}}, upsert=True)
         await message.reply_text("❌ Economy & RPG features are now **DISABLED** in this group!")
+
+# ==========================================
+#              AUTO RELIEF FUND (0$ FIX)
+# ==========================================
+
+async def auto_replenish_loop():
+    """Background task jo har 6 minute mein 0$ walo ko $100 dega"""
+    while True:
+        await asyncio.sleep(360) # 6 minutes
+        try:
+            # Jinke paas 0 ya usse kam paise hain, unko $100 dedo chup-chaap
+            await game_db.update_many({"points": {"$lte": 0}}, {"$set": {"points": 100}})
+        except Exception:
+            pass
+
+# Start the background loop
+asyncio.create_task(auto_replenish_loop())
+
+
+# ==========================================
+#              ECO LEADERBOARD
+# ==========================================
+
+@app.on_message(filters.command(["ecorank", "ecousers"], prefixes=["/", ".", "!"]) & filters.group)
+async def eco_rankings(client, message: Message):
+    chat_id = message.chat.id
+    if not await is_eco_enabled(chat_id): return
+    try: await message.delete()
+    except: pass
+    
+    # Top Users
+    top_users = game_db.find({"points": {"$gt": 0}}).sort("points", -1).limit(10)
+    
+    text = f"🌍 **{smallcaps('Global Economy Rankings')}** 🌍\n\n"
+    text += f"👤 **{smallcaps('Top 10 Richest Users')}**\n"
+    
+    count = 1
+    has_users = False
+    async for u in top_users:
+        has_users = True
+        name = smallcaps(u.get("name", "Unknown")[:15])
+        pts = u.get("points", 0)
+        text += f"**{count}.** {name} - `${pts}`\n"
+        count += 1
+        
+    if not has_users:
+        text += smallcaps("No rich users found yet!") + "\n"
+        
+    # Top Groups
+    text += f"\n👥 **{smallcaps('Top 5 Richest Groups')}**\n"
+    top_groups = wallet_db.find({"points": {"$gt": 0}}).sort("points", -1).limit(5)
+    
+    count = 1
+    has_groups = False
+    async for g in top_groups:
+        has_groups = True
+        title = smallcaps(g.get("title", "Unknown Group")[:20])
+        pts = g.get("points", 0)
+        text += f"**{count}.** {title} - `${pts}`\n"
+        count += 1
+        
+    if not has_groups:
+        text += smallcaps("No groups have started earning yet!")
+        
+    await message.reply_text(text)
 
 # ==========================================
 #              DAILY REWARDS
@@ -208,10 +274,9 @@ async def rob_or_kill_user(client, message: Message):
     # --- CHECK IF DAILY BONUS IS CLAIMED RECENTLY ---
     last_daily = robber_data.get("last_daily", 0) if robber_data else 0
     if time.time() - last_daily >= 86400:
-        # Prompt to claim daily bonus
         claim_msg = "⚠️ " + smallcaps("You haven't claimed your daily bonus yet! First claim it to perform an attack.")
         markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"🎁 {smallcaps('Claim Daily Bonus')}", url=f"https://t.me/{app.username}?start=claimx")]
+            [InlineKeyboardButton("🎁 " + smallcaps("Claim Daily Bonus"), url=f"https://t.me/{app.username}?start=claimx")]
         ])
         return await message.reply_text(claim_msg, reply_markup=markup)
 
@@ -345,4 +410,4 @@ async def give_money(client, message: Message):
     text += f"💰 {smallcaps('Net Received')}: **${net_amount}**"
     
     await message.reply_text(text)
-
+    
