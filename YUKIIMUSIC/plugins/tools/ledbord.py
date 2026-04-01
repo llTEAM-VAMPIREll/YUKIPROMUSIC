@@ -20,16 +20,20 @@ CACHE_TIME = 0 # TEST KARTE TIME ISKO 0 RAKHA HAI. BAAD MEIN 300 (5 mins) KAR DE
 
 # ----------------- ANTI-SPAM LOGIC -----------------
 USER_MESSAGE_HISTORY = {} 
+USER_LAST_MESSAGE = {} # Repeated words check karne ke liye
 BLOCKED_USERS = {}
-spam_lock = asyncio.Lock() # Fix for rapid async spam bypassing lists
+spam_lock = asyncio.Lock() 
 
 SPAM_THRESHOLD = 7 
-SPAM_WINDOW = 5 
+SPAM_WINDOW = 2 
 BLOCK_DURATION = 1200 
+REPEAT_THRESHOLD = 6 
 
 # ----------------- MILESTONE LOGIC -----------------
-# Chatwise store to avoid sending multiple messages for same milestone
 MILESTONES_REACHED = {} 
+
+# ----------------- LIVE TEST SESSIONS -----------------
+COUNT_TEST_SESSIONS = {} # Format: {(chat_id, user_id): current_count}
 
 # ----------------- DB FUNCTIONS -----------------
 async def update_message_count_and_check_milestone(chat_id: int, user_id: int, name: str):
@@ -170,8 +174,8 @@ def lb_buttons(current_timeframe="overall"):
 
 # ----------------- HANDLERS -----------------
 
-# 1. Message Counter Listener & Spam Checker
-@app.on_message(filters.group & ~filters.bot, group=10)
+# 1. Message Counter Listener & Spam Checker (Group 112)
+@app.on_message(filters.group & ~filters.bot, group=112)
 async def count_messages(client, message: Message):
     if not message.from_user:
         return
@@ -179,31 +183,51 @@ async def count_messages(client, message: Message):
     user_id = message.from_user.id
     current_time = time.time()
     
-    # 1. Check Block Status First (Fast return)
+    # Check Block Status
     if user_id in BLOCKED_USERS:
         if current_time < BLOCKED_USERS[user_id]:
             return 
         else:
             del BLOCKED_USERS[user_id] 
 
-    # Use lock to prevent race conditions during rapid spam
     async with spam_lock:
+        is_spammer = False
+        spam_reason = ""
+        
+        # --- LOGIC A: Same Message Repeated 6 Times ---
+        msg_text = message.text or message.caption
+        if msg_text:
+            msg_text = msg_text.lower().strip() 
+            if user_id not in USER_LAST_MESSAGE:
+                USER_LAST_MESSAGE[user_id] = {"text": msg_text, "count": 1}
+            else:
+                if USER_LAST_MESSAGE[user_id]["text"] == msg_text:
+                    USER_LAST_MESSAGE[user_id]["count"] += 1
+                else:
+                    USER_LAST_MESSAGE[user_id] = {"text": msg_text, "count": 1}
+            
+            if USER_LAST_MESSAGE[user_id]["count"] >= REPEAT_THRESHOLD:
+                is_spammer = True
+                spam_reason = "repeating the same message"
+                USER_LAST_MESSAGE[user_id] = {"text": "", "count": 0} 
+                
+        # --- LOGIC B: Time Window Spam (7 msgs in 10s) ---
         if user_id not in USER_MESSAGE_HISTORY:
             USER_MESSAGE_HISTORY[user_id] = []
             
         USER_MESSAGE_HISTORY[user_id].append(current_time)
-        
-        # Clean old timestamps
         USER_MESSAGE_HISTORY[user_id] = [msg_time for msg_time in USER_MESSAGE_HISTORY[user_id] if current_time - msg_time <= SPAM_WINDOW]
         
-        # Check if limit exceeded
         if len(USER_MESSAGE_HISTORY[user_id]) >= SPAM_THRESHOLD:
-            BLOCKED_USERS[user_id] = current_time + BLOCK_DURATION
-            USER_MESSAGE_HISTORY[user_id] = [] # Clear history
+            is_spammer = True
+            spam_reason = "flooding"
+            USER_MESSAGE_HISTORY[user_id] = [] 
             
+        # --- ACTION: Block if spammer ---
+        if is_spammer:
+            BLOCKED_USERS[user_id] = current_time + BLOCK_DURATION
             try:
-                warning_msg = await message.reply_text(f"⛔️ {message.from_user.mention} is flooding: blocked for 20 minutes from the leaderboard.")
-                # We do not block the thread here, we create a task to delete the msg later
+                warning_msg = await message.reply_text(f"⛔️ {message.from_user.mention} is {spam_reason}: blocked for 20 minutes from the leaderboard.")
                 async def delete_warn():
                     await asyncio.sleep(10)
                     try:
@@ -215,9 +239,65 @@ async def count_messages(client, message: Message):
                 pass
             return 
             
-    # If not blocked, update DB and check milestones
+    # Normal User -> Count Update
     asyncio.create_task(update_message_count_and_check_milestone(message.chat.id, message.from_user.id, message.from_user.first_name))
 
+    # --- LIVE TEST LOGIC INTERCEPTOR ---
+    session_key = (message.chat.id, message.from_user.id)
+    if session_key in COUNT_TEST_SESSIONS:
+        # Ignore command messages from increasing the live test count reply
+        if msg_text and msg_text.startswith(("/", ".")):
+            return
+            
+        COUNT_TEST_SESSIONS[session_key] += 1
+        count = COUNT_TEST_SESSIONS[session_key]
+        
+        btn = InlineKeyboardMarkup([[
+            InlineKeyboardButton("🛑 End Count", callback_data=f"endct_{message.from_user.id}")
+        ]])
+        
+        try:
+            await message.reply_text(f"📝 Message {count} | Database Updated ✅", reply_markup=btn)
+        except:
+            pass
+
+# ----------------- LIVE TEST COMMAND -----------------
+@app.on_message(filters.command(["cunttest", "counttest"], prefixes=["/", "."]) & filters.group)
+async def start_count_test(client, message: Message):
+    session_key = (message.chat.id, message.from_user.id)
+    
+    # Initialize count to 0
+    COUNT_TEST_SESSIONS[session_key] = 0
+    
+    btn = InlineKeyboardMarkup([[
+        InlineKeyboardButton("🛑 End Count", callback_data=f"endct_{message.from_user.id}")
+    ]])
+    
+    await message.reply_text(
+        f"✅ **Test Started for {message.from_user.mention}!**\n\n"
+        "Ab tu jo bhi message bhejega, main uski live counting aur database update report doonga.\n"
+        "Jab test khatam karna ho toh neeche 'End Count' daba dena.",
+        reply_markup=btn
+    )
+
+# ----------------- LIVE TEST END BUTTON -----------------
+@app.on_callback_query(filters.regex(r"^endct_(\d+)$"))
+async def end_count_cb(client, query):
+    user_id = int(query.matches[0].group(1))
+    
+    if query.from_user.id != user_id:
+        return await query.answer("Ye test tumhara nahi hai!", show_alert=True)
+        
+    session_key = (query.message.chat.id, user_id)
+    
+    if session_key in COUNT_TEST_SESSIONS:
+        del COUNT_TEST_SESSIONS[session_key]
+        try:
+            await query.message.edit_text("✅ **Count test ended manually.** Ab main aage test count ke messages nahi bhejunga.")
+        except:
+            pass
+    else:
+        await query.answer("Test already ended!", show_alert=True)
 
 # 2. Main Command Handler (Leaderboard)
 @app.on_message(filters.command(["rank", "rankings"], prefixes=["/", "."]) & filters.group)
@@ -231,7 +311,6 @@ async def leaderboard_cmd(client, message: Message):
     timeframe = "overall"
     cache_key = f"{chat_id}_{timeframe}"
     
-    # Check Cache
     if cache_key in LEADERBOARD_CACHE and time.time() < LEADERBOARD_CACHE[cache_key]["expiry"]:
         cache_data = LEADERBOARD_CACHE[cache_key]
         if cache_data.get("is_text_only"):
@@ -257,32 +336,27 @@ async def leaderboard_cmd(client, message: Message):
 @app.on_message(filters.command(["force", "fc"], prefixes=["/", "."]) & filters.group)
 async def force_leaderboard_update(client, message: Message):
     chat_id = message.chat.id
-    
     try:
         await message.delete()
     except:
         pass
         
-    # Clear the cache for this specific chat for all timeframes
     for tf in ["overall", "today", "week"]:
         cache_key = f"{chat_id}_{tf}"
         if cache_key in LEADERBOARD_CACHE:
             del LEADERBOARD_CACHE[cache_key]
             
-    # Send a fresh leaderboard (defaulting to overall)
     timeframe = "overall"
     data, total_msgs = await get_leaderboard_data(chat_id, timeframe)
     caption_text = build_caption(data, total_msgs)
     
     if not data or total_msgs == 0:
         sent_msg = await app.send_message(chat_id, caption_text, reply_markup=lb_buttons(timeframe))
-        # Re-cache the new data
         LEADERBOARD_CACHE[f"{chat_id}_{timeframe}"] = {"is_text_only": True, "caption": caption_text, "expiry": time.time() + CACHE_TIME}
     else:
         img_stream = generate_leaderboard_image(data, timeframe)
         if img_stream:
             sent_msg = await app.send_photo(chat_id, photo=img_stream, caption=caption_text, reply_markup=lb_buttons(timeframe), has_spoiler=True)
-            # Re-cache the new data
             LEADERBOARD_CACHE[f"{chat_id}_{timeframe}"] = {"is_text_only": False, "image": sent_msg.photo.file_id, "caption": caption_text, "expiry": time.time() + CACHE_TIME}
         else:
             await app.send_message(chat_id, "❌ Template image not found!")
@@ -348,4 +422,3 @@ async def manual_spam_trigger(client, message: Message):
         
     except:
         pass
-    
