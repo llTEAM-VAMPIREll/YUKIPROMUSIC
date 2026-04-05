@@ -1,7 +1,7 @@
 import config
 from YUKIIMUSIC import app
 
-# 🔥 HELLFIRE DEVS HACK: Raw API Button Generator (Fixed for Telegram Limits)
+# 🔥 HELLFIRE DEVS HACK: Raw API Button Generator
 def api_btn(text, callback_data=None, url=None, style=None, custom_emoji_id=None):
     btn = {"text": text}
     if callback_data:
@@ -12,7 +12,6 @@ def api_btn(text, callback_data=None, url=None, style=None, custom_emoji_id=None
             url_str = f"https://t.me/{url_str.replace('@', '')}"
         btn["url"] = url_str
         
-    # 🔥 FIX: Sirf Valid Telegram Styles Allow Karenge!
     if style in ["primary", "danger", "success"]:
         btn["style"] = style  
         
@@ -57,17 +56,17 @@ def private_panel(_):
             )
         ],
         [
-            # Settings/Help (🔥 GREEN banaya isko taaki crash na ho)
+            # Settings/Help (Green/Primary)
             api_btn(
                 text=_["S_B_4"], 
                 callback_data="settings_back_helper", 
                 style="primary", 
                 custom_emoji_id="6080176744709495278"
             ),
-            # Mimi Tunes (Blue)
+            # Version Button (Blue) - Changed from Mimi Tunes
             api_btn(
-                text="˹ᴍɪᴍɪ ᴛᴜɴᴇs˼♪", 
-                url="http://t.me/IAM_MIMBOT", 
+                text="˹ᴠᴇʀsɪᴏɴ˼♪", 
+                callback_data="yuki_version_info", 
                 style="primary", 
                 custom_emoji_id="5413840936994097463"
             ),
