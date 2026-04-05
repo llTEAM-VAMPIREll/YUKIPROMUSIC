@@ -14,7 +14,7 @@ from YUKIIMUSIC.utils.database import is_on_off
 from YUKIIMUSIC.utils.formatters import time_to_seconds
 
 # SHRUTI API CONFIG
-FALLBACK_API_URL = "https://shrutibots.site"
+FALLBACK_API_URL = "https://yukiapi.site"
 YOUR_API_URL = None
 
 cookies_file = "YUKIIMUSIC/assets/cookies.txt"
@@ -28,7 +28,7 @@ async def get_api_url():
     if YOUR_API_URL: return YOUR_API_URL
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://pastebin.com/raw/rLsBhAQa", timeout=5) as resp:
+            async with session.get("https://pastebin.com/raw/eWy6mdff", timeout=5) as resp:
                 if resp.status == 200:
                     YOUR_API_URL = (await resp.text()).strip()
                 else:
