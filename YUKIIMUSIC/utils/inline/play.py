@@ -55,18 +55,21 @@ def stream_markup_timer(_, chat_id, played, dur):
         if i < pos:
             bar += "━"
         elif i == pos:
-            bar += "🍃"  # Premium Emoji as the slider dot!
+            bar += "✨"  # Premium Emoji as the slider dot!
         else:
             bar += "─"
             
     buttons = [
         [
-            # Full Premium Timer Bar!
+            # Full Premium Timer Bar! (Kyunki ab call.py isko support karta hai)
             api_btn(text=f"{played}  {bar}  {dur}", callback_data="GetTimer", style="primary", custom_emoji_id="6334696528145286813")
         ],
         [
-            # 🔥 SINGLE CONTROL BUTTON LAGA DIYA YAHAN 🔥
-            api_btn(text="🫟 ᴄᴏɴᴛʀᴏʟs", callback_data=f"PanelControl|{chat_id}", style="primary")
+            # 4 Premium Emoji Buttons (Play, Pause, Skip, Stop)
+            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5408916593780470262"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="success", custom_emoji_id="5409262351532701571"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5409042015415448331"), 
         ],
         [
             # Mimi Tunes & Home
@@ -87,8 +90,10 @@ def stream_markup_timer(_, chat_id, played, dur):
 def stream_markup(_, chat_id):
     buttons = [
         [
-            # 🔥 SINGLE CONTROL BUTTON LAGA DIYA YAHAN 🔥
-            api_btn(text="🎛 ᴄᴏɴᴛʀᴏʟs", callback_data=f"PanelControl|{chat_id}", style="primary")
+            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5408916593780470262"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="success", custom_emoji_id="5409262351532701571"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5409042015415448331"), 
         ],
         [
             api_btn(text="˹  ᴛᴜɴᴇs˼♪", url="http://t.me/IAM_MIMBOT", style="primary", custom_emoji_id="6334333036473091884"),
