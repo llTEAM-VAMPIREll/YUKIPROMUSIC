@@ -59,6 +59,40 @@ async def unban_assistant(_, callback: CallbackQuery):
         await callback.answer(f"𝙁𝙖𝙞𝙡𝙚𝙙 𝙏𝙤 𝙐𝙣𝙗𝙖𝙣 𝙈𝙮 𝘼𝙨𝙨𝙞𝙨𝙩𝙖𝙣𝙩 𝘽𝙚𝙘𝙖𝙪𝙨𝙚 𝙄 𝘿𝙤𝙣'𝙩 𝙃𝙖𝙫𝙚 𝘽𝙖𝙣 𝙋𝙤𝙬𝙚𝙧\n\n➻ 𝙋𝙡𝙚𝙖𝙨𝙚 𝙋𝙧𝙤𝙫𝙞𝙙𝙚 𝙈𝙚 𝘽𝙖𝙣 𝙋𝙤𝙬𝙚𝙧 𝙎𝙤 𝙏𝙝𝙖𝙩 𝙄 𝙘𝙖𝙣 𝙐𝙣𝙗𝙖𝙣 𝙈𝙮 𝘼𝙨𝙨𝙞𝙨𝙩𝙖𝙣𝙩 𝙄𝙙", show_alert=True)
 
 
+# 🔥 VERSION INFO CALLBACK LAGA DIYA YAHAN 🔥
+@app.on_callback_query(filters.regex("yuki_version_info"))
+async def version_info_callback(client, CallbackQuery):
+    text = """
+**❖ ʏᴜᴋɪ ᴍᴜsɪᴄ ᴠᴇʀsɪᴏɴ ɪɴғᴏ ❖**
+
+**‣ ʙᴏᴛ ᴠᴇʀsɪᴏɴ :** `9.5`
+**‣ ʟᴀsᴛ ᴜᴘᴅᴀᴛᴇᴅ :** `05 April 2026`
+**‣ ᴘʏᴛɢᴄᴀʟʟs :** `0.0.9`
+
+*Pᴏᴡᴇʀᴇᴅ ʙʏ HᴇʟʟғɪʀᴇDᴇᴠs*
+    """
+    
+    keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="ᴛᴀᴘ ᴛᴏ sᴇᴇ ᴠᴇʀsɪᴏɴ ɪɴғᴏ", 
+                    url="http://updates.yukiapi.site"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 ʙᴀᴄᴋ", 
+                    callback_data="settings_back_helper"
+                )
+            ]
+        ]
+    )
+    
+    await CallbackQuery.answer()
+    await CallbackQuery.edit_message_text(text, reply_markup=keyboard)
+
+
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
 @languageCB
 async def del_back_playlist(client, CallbackQuery, _):
