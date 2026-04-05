@@ -123,7 +123,7 @@ class YouTubeAPI:
                 for entity in message.caption_entities:
                     if entity.type == MessageEntityType.TEXT_LINK:
                         return entity.url
-        if offset in (None,): return None
+        if offset is None or length is None: return None
         return text[offset : offset + length]
 
     async def details(self, link: str, videoid: Union[bool, str] = None):
