@@ -4,6 +4,8 @@ import asyncio
 import requests
 import wget
 import time
+import aiohttp
+import aiofiles
 import yt_dlp
 from urllib.parse import urlparse
 from youtube_search import YoutubeSearch
@@ -27,9 +29,11 @@ from YUKIIMUSIC.utils.decorators.language import language, languageCB
 from YUKIIMUSIC.utils.formatters import convert_bytes
 from YUKIIMUSIC.utils.inline.song import song_markup
 
+# TERA DEFAULT THUMBNAIL
+DEFAULT_THUMB = "https://files.catbox.moe/5f5clw.jpg"
+
 # Command
 SONG_COMMAND = ["song"]
-
 
 @app.on_message(
     filters.command(SONG_COMMAND)
@@ -50,10 +54,7 @@ async def song_commad_group(client, message: Message, _):
     )
     await message.reply_text(_["song_1"], reply_markup=upl)
 
-
 # Song Module
-
-
 @app.on_message(
     filters.command(SONG_COMMAND)
     & filters.private
@@ -71,7 +72,7 @@ async def song_commad_private(client, message: Message, _):
             title,
             duration_min,
             duration_sec,
-            thumbnail,
+            thumbnail, # Asli thumbnail ignore marenge aage
             vidid,
         ) = await YouTube.details(url)
         if str(duration_min) == "None":
@@ -85,7 +86,8 @@ async def song_commad_private(client, message: Message, _):
         buttons = song_markup(_, vidid)
         await mystic.delete()
         return await message.reply_photo(
-            thumbnail,
+            photo=DEFAULT_THUMB, # DEFAULT THUMBNAIL YAHAN LAGA DIYA
+            has_spoiler=True,    # SPOILER EFFECT YAHAN LAGA DIYA
             caption=_["song_4"].format(title),
             reply_markup=InlineKeyboardMarkup(buttons),
         )
@@ -113,11 +115,11 @@ async def song_commad_private(client, message: Message, _):
     buttons = song_markup(_, vidid)
     await mystic.delete()
     return await message.reply_photo(
-        thumbnail,
+        photo=DEFAULT_THUMB, # DEFAULT THUMBNAIL YAHAN LAGA DIYA
+        has_spoiler=True,    # SPOILER EFFECT YAHAN LAGA DIYA
         caption=_["song_4"].format(title),
         reply_markup=InlineKeyboardMarkup(buttons),
     )
-
 
 @app.on_callback_query(
     filters.regex(pattern=r"song_back") & ~BANNED_USERS
@@ -131,7 +133,6 @@ async def songs_back_helper(client, CallbackQuery, _):
     return await CallbackQuery.edit_message_reply_markup(
         reply_markup=InlineKeyboardMarkup(buttons)
     )
-
 
 @app.on_callback_query(
     filters.regex(pattern=r"song_helper") & ~BANNED_USERS
@@ -147,9 +148,7 @@ async def song_helper_cb(client, CallbackQuery, _):
         pass
     if stype == "audio":
         try:
-            formats_available, link = await YouTube.formats(
-                vidid, True
-            )
+            formats_available, link = await YouTube.formats(vidid, True)
         except:
             return await CallbackQuery.edit_message_text(_["song_7"])
         keyboard = InlineKeyboard()
@@ -181,19 +180,14 @@ async def song_helper_cb(client, CallbackQuery, _):
                 text=_["CLOSE_BUTTON"], callback_data=f"close"
             ),
         )
-        return await CallbackQuery.edit_message_reply_markup(
-            reply_markup=keyboard
-        )
+        return await CallbackQuery.edit_message_reply_markup(reply_markup=keyboard)
     else:
         try:
-            formats_available, link = await YouTube.formats(
-                vidid, True
-            )
+            formats_available, link = await YouTube.formats(vidid, True)
         except Exception as e:
             print(e)
             return await CallbackQuery.edit_message_text(_["song_7"])
         keyboard = InlineKeyboard()
-        # AVC Formats Only [ AMBOTMusic Bot]
         done = [160, 133, 134, 135, 136, 137, 298, 299, 264, 304, 266]
         for x in formats_available:
             check = x["format"]
@@ -219,100 +213,99 @@ async def song_helper_cb(client, CallbackQuery, _):
                 text=_["CLOSE_BUTTON"], callback_data=f"close"
             ),
         )
-        return await CallbackQuery.edit_message_reply_markup(
-            reply_markup=keyboard
-        )
+        return await CallbackQuery.edit_message_reply_markup(reply_markup=keyboard)
 
 
-# Downloading Songs Here
-
-
+# 🚀 TERA YUKI API IMPLEMENTATION YAHAN HAI 🚀
 @app.on_callback_query(
     filters.regex(pattern=r"song_download") & ~BANNED_USERS
 )
 @languageCB
 async def song_download_cb(client, CallbackQuery, _):
     try:
-        await CallbackQuery.answer("Downloading")
+        await CallbackQuery.answer("Downloading from YUKI API...")
     except:
         pass
     callback_data = CallbackQuery.data.strip()
     callback_request = callback_data.split(None, 1)[1]
     stype, format_id, vidid = callback_request.split("|")
-    mystic = await CallbackQuery.edit_message_text(_["song_8"])
-    yturl = f"https://www.youtube.com/watch?v={vidid}"
-    with yt_dlp.YoutubeDL({"quiet": True}) as ytdl:
-        x = ytdl.extract_info(yturl, download=False)
-    title = (x["title"]).title()
-    title = re.sub("\W+", " ", title)
-    thumb_image_path = await CallbackQuery.message.download()
-    duration = x["duration"]
+    mystic = await CallbackQuery.edit_message_text("🔄 Requesting YUKI API for fast stream...")
+    
+    # Title nikalne ke liye YouTube details (API format ke liye title zaroori hota hai upload mein)
+    try:
+        (title, _, _, _, _) = await YouTube.details(vidid)
+        title = re.sub("\W+", " ", title).title()
+    except:
+        title = "YUKI_Music_Track"
+
+    ext = "mp3" if stype == "audio" else "mp4"
+    file_path = f"downloads/{vidid}.{ext}"
+    os.makedirs("downloads", exist_ok=True)
+
+    try:
+        # 1. YUKI API se Token Mangwana
+        async with aiohttp.ClientSession() as session:
+            token_url = f"https://yukiapi.site/download?url={vidid}&type={stype}"
+            async with session.get(token_url) as resp:
+                data = await resp.json()
+                token = data.get("download_token")
+                
+            if not token:
+                return await mystic.edit_text("❌ YUKI API Error: Token nahi mila!")
+
+            await mystic.edit_text("⚡ Downloading at God Speed from YUKI API...")
+
+            # 2. Token use karke gaana bot server pe lana
+            stream_url = f"https://yukiapi.site/stream/{vidid}?type={stype}&token={token}"
+            async with session.get(stream_url) as resp:
+                if resp.status == 200:
+                    f = await aiofiles.open(file_path, mode='wb')
+                    await f.write(await resp.read())
+                    await f.close()
+                else:
+                    return await mystic.edit_text("❌ YUKI API Streaming Error!")
+    except Exception as e:
+        return await mystic.edit_text(f"❌ API Connection Error: {e}")
+
+    # 3. File Telegram pe upload karna
+    await mystic.edit_text(_["song_11"])
+    
     if stype == "video":
-        thumb_image_path = await CallbackQuery.message.download()
-        width = CallbackQuery.message.photo.width
-        height = CallbackQuery.message.photo.height
-        try:
-            file_path = await YouTube.download(
-                yturl,
-                mystic,
-                songvideo=True,
-                format_id=format_id,
-                title=title,
-            )
-        except Exception as e:
-            return await mystic.edit_text(_["song_9"].format(e))
-        med = InputMediaVideo(
-            media=file_path,
-            duration=duration,
-            width=width,
-            height=height,
-            thumb=thumb_image_path,
-            caption=title,
-            supports_streaming=True,
-        )
-        await mystic.edit_text(_["song_11"])
         await app.send_chat_action(
             chat_id=CallbackQuery.message.chat.id,
             action=ChatAction.UPLOAD_VIDEO,
         )
-        try:
-            await CallbackQuery.edit_message_media(media=med)
-        except Exception as e:
-            print(e)
-            return await mystic.edit_text(_["song_10"])
-        os.remove(file_path)
-    elif stype == "audio":
-        try:
-            filename = await YouTube.download(
-                yturl,
-                mystic,
-                songaudio=True,
-                format_id=format_id,
-                title=title,
-            )
-        except Exception as e:
-            return await mystic.edit_text(_["song_9"].format(e))
-        med = InputMediaAudio(
-            media=filename,
+        med = InputMediaVideo(
+            media=file_path,
+            thumb=DEFAULT_THUMB,
             caption=title,
-            thumb=thumb_image_path,
-            title=title,
-            performer=x["uploader"],
+            supports_streaming=True,
         )
-        await mystic.edit_text(_["song_11"])
+    else:
         await app.send_chat_action(
             chat_id=CallbackQuery.message.chat.id,
             action=ChatAction.UPLOAD_AUDIO,
         )
-        try:
-            await CallbackQuery.edit_message_media(media=med)
-        except Exception as e:
-            print(e)
-            return await mystic.edit_text(_["song_10"])
-        os.remove(filename)
+        med = InputMediaAudio(
+            media=file_path,
+            caption=title,
+            thumb=DEFAULT_THUMB,
+            title=title,
+            performer="YUKI API"
+        )
+        
+    try:
+        await CallbackQuery.edit_message_media(media=med)
+    except Exception as e:
+        print(e)
+        return await mystic.edit_text(_["song_10"])
+        
+    # Cache clear from local bot server (Yuki API pe toh saved rahega hi)
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
 
-
+# Instagram Reels Module
 @app.on_message(filters.command(["ig"], ["/", "!", "."]))
 async def download_instareels(c: app, m: Message):
     try:
@@ -339,10 +332,6 @@ async def download_instareels(c: app, m: Message):
             except Exception:
                 await m.reply_text("I am unable to reach to this reel.")
 
-
-
-######
-
 @app.on_message(filters.command(["reel"], ["/", "!", "."]))
 async def instagram_reel(client, message):
     if len(message.command) == 2:
@@ -361,3 +350,4 @@ async def instagram_reel(client, message):
             await message.reply("Request was not successful.")
     else:
         await message.reply("Please provide a valid Instagram URL using the /reels command.")
+              
