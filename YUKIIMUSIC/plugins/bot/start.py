@@ -110,11 +110,11 @@ async def send_magic_start(chat_id, photo_url, caption, markup, reply_to_id=None
 async def start_pm(client, message: Message, _):
     
     try:
-        await client.send_reaction(chat_id=message.chat.id, message_id=message.id, emoji="❤️")
+        await client.send_reaction(chat_id=message.chat.id, message_id=message.id, emoji="🥰")
     except: pass
         
     try:
-        stk = await message.reply_sticker("CAACAgUAAxkBAAFD0UBpqDbTjoP_CXF7Ce6oZykP4r64jQACxAcAArligFU4dyG-LQJBjDoE")
+        stk = await message.reply_sticker("AAMCBQADGQEAAUZ6F2nSJtwq54PrKZjg7e2E_iTfo2rQAAJqHQACjauQVnD7QOnM1BYGAQAHbQADOwQ")
         await asyncio.sleep(2) 
         await stk.delete()     
     except: pass
@@ -131,7 +131,7 @@ async def start_pm(client, message: Message, _):
     await asyncio.sleep(0.4)
     await loading_1.edit_text("<emoji id='6001132493011425597'>💖</emoji> <b>ʜєʏ ʙᴧʙʏ!</b>")
     await asyncio.sleep(0.4)
-    await loading_1.edit_text("<emoji id='5413840936994097463'>🌺</emoji> <b>ᴍɪᴍɪ ꭙ ϻᴜsɪᴄ ♪\nsᴛᴧʀᴛed!</b>")
+    await loading_1.edit_text("<emoji id='5413840936994097463'>🌺</emoji> <b>𝐘ᴜᴋɪ ꭙ ϻᴜsɪᴄ ♪\nsᴛᴧʀᴛed!</b>")
     await asyncio.sleep(0.5)
     await loading_1.delete()
     
