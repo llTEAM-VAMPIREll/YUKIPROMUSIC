@@ -176,7 +176,7 @@ async def stream(
                             run = await app.send_message(
                                 original_chat_id, 
                                 text=caption_text, 
-                                link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                                link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                             )
                         else:
                             run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
@@ -256,7 +256,7 @@ async def stream(
                         run = await app.send_message(
                             original_chat_id, 
                             text=caption_text, 
-                            link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                            link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                         )
                     else:
                         run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
@@ -305,7 +305,7 @@ async def stream(
                         run = await app.send_message(
                             original_chat_id, 
                             text=caption_text, 
-                            link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                            link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                         )
                     else:
                         run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
@@ -358,7 +358,7 @@ async def stream(
                         run = await app.send_message(
                             original_chat_id, 
                             text=caption_text, 
-                            link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                            link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                         )
                     else:
                         run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
@@ -414,7 +414,7 @@ async def stream(
                         run = await app.send_message(
                             original_chat_id, 
                             text=caption_text, 
-                            link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                            link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                         )
                     else:
                         run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
@@ -461,7 +461,7 @@ async def stream(
                         run = await app.send_message(
                             original_chat_id, 
                             text=caption_text, 
-                            link_preview_options=LinkPreviewOptions(is_disabled=False, show_above_text=True)
+                            link_preview_options=LinkPreviewOptions(url=video_file, show_above_text=True)
                         )
                     else:
                         run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
