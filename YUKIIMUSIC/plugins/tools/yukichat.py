@@ -286,7 +286,7 @@ async def yuki_main_chat(client, message: Message):
     if message.text and message.text.startswith(('/', '.', '!', '?')):
         return
 
-    bot_id = (await client.get_me()).id
+    bot_id = client.me.id
     is_dm = message.chat.type.name == "PRIVATE"
     
     text_lower = message.text.lower() if message.text else ""
