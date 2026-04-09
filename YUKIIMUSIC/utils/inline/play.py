@@ -65,20 +65,16 @@ def stream_markup_timer(_, chat_id, played, dur):
             api_btn(text=f"{played}  {bar}  {dur}", callback_data="GetTimer", style="primary", custom_emoji_id="6334696528145286813")
         ],
         [
-            # 4 Premium Emoji Buttons (Play, Pause, Skip, Stop)
-            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
-            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5408916593780470262"), 
-            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="success", custom_emoji_id="5409262351532701571"), 
-            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5409042015415448331"), 
+            # 4 Premium Emoji Buttons (Play, Pause, Skip, Stop) - NORMAL COLOR NOW
+            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", custom_emoji_id="5343597635926245720"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", custom_emoji_id="5408916593780470262"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", custom_emoji_id="5409262351532701571"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", custom_emoji_id="5409042015415448331"), 
         ],
         [
             # Mimi Tunes & Home
             api_btn(text="  ᴛᴜɴᴇs˼♪", url="http://t.me/IAM_MIMBOT", style="primary", custom_emoji_id="6334333036473091884"),
             api_btn(text="ʜᴏᴍᴇ", url=config.SUPPORT_CHAT, style="primary", custom_emoji_id="6334648089504122382"),
-        ],
-        [
-            # Privacy Policy
-            api_btn(text="ᴘʀɪᴠᴀᴄʏ  ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="success", custom_emoji_id="6334672948774831861")
         ],
         [
             # Close Red
@@ -90,17 +86,15 @@ def stream_markup_timer(_, chat_id, played, dur):
 def stream_markup(_, chat_id):
     buttons = [
         [
-            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", style="primary", custom_emoji_id="5343597635926245720"), 
-            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", style="danger", custom_emoji_id="5408916593780470262"), 
-            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", style="success", custom_emoji_id="5409262351532701571"), 
-            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", style="danger", custom_emoji_id="5409042015415448331"), 
+            # 4 Premium Emoji Buttons - NORMAL COLOR NOW
+            api_btn(text=" ", callback_data=f"ADMIN Resume|{chat_id}", custom_emoji_id="5343597635926245720"), 
+            api_btn(text=" ", callback_data=f"ADMIN Pause|{chat_id}", custom_emoji_id="5408916593780470262"), 
+            api_btn(text=" ", callback_data=f"ADMIN Skip|{chat_id}", custom_emoji_id="5409262351532701571"), 
+            api_btn(text=" ", callback_data=f"ADMIN Stop|{chat_id}", custom_emoji_id="5409042015415448331"), 
         ],
         [
             api_btn(text="˹  ᴛᴜɴᴇs˼♪", url="http://t.me/IAM_MIMBOT", style="primary", custom_emoji_id="6334333036473091884"),
             api_btn(text="ʜᴏᴍᴇ", url=config.SUPPORT_CHAT, style="primary", custom_emoji_id="6334648089504122382"),
-        ],
-        [
-            api_btn(text="ᴘʀɪᴠᴀᴄʏ. ", url="https://telegra.ph/Privacy-Policy-03-15-2", style="success", custom_emoji_id="6334672948774831861")
         ],
         [
             api_btn(text=str(_["CLOSE_BUTTON"]).strip(), callback_data="close", style="danger", custom_emoji_id="6334598469746952256")
@@ -156,7 +150,6 @@ def music_end_markup(_):
             InlineKeyboardButton(text="🏠 ʜᴏᴍᴇ", url=f"https://t.me/{app.username}?start=help"),
         ],
         [
-            InlineKeyboardButton(text="🔐 ᴘʀɪᴠᴀᴄʏ", url=getattr(config, "SUPPORT_CHAT", f"https://t.me/{app.username}")),
             InlineKeyboardButton(text=str(_["CLOSE_BUTTON"]).strip(), callback_data="close"),
         ],
     ]
