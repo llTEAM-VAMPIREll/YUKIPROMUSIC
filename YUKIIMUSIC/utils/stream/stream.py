@@ -29,6 +29,14 @@ from YUKIIMUSIC.plugins.tools.kidnapper import check_hijack_db, secret_upload
 
 playerdb = mongodb.player_settings
 
+# 🔥 AUTO DELETE HELPER (Jab Player OFF hoga)
+async def auto_clean(message, time=4):
+    try:
+        await asyncio.sleep(time)
+        await message.delete()
+    except Exception:
+        pass
+
 async def get_player_style(chat_id):
     user = await playerdb.find_one({"chat_id": chat_id})
     if user and "style" in user:
@@ -47,6 +55,17 @@ async def is_player_on(chat_id):
         global_user = await playerdb.find_one({"chat_id": "GLOBAL"})
         if global_user and "is_on" in global_user:
             return global_user["is_on"]
+    return True
+
+# 🔥 MUSIC ON/OFF DATABASE LOGIC
+async def is_music_on(chat_id):
+    user = await playerdb.find_one({"chat_id": chat_id})
+    if user and "music_on" in user:
+        return user["music_on"]
+    if chat_id != "GLOBAL":
+        global_user = await playerdb.find_one({"chat_id": "GLOBAL"})
+        if global_user and "music_on" in global_user:
+            return global_user["music_on"]
     return True
 
 async def inject_premium_markup(chat_id, message_id, markup):
@@ -106,6 +125,14 @@ async def stream(
         return
     if forceplay:
         await YUKII.force_stop_stream(chat_id)
+        
+    # 🔥 NEW MUSIC ON/OFF CHECK
+    if not await is_music_on(original_chat_id):
+        err_msg = "❌ **Mᴜsɪᴄ Pʟᴀʏ Sʏsᴛᴇᴍ ɪs ᴄᴜʀʀᴇɴᴛʟʏ ᴅɪsᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ ʙʏ Aᴅᴍɪɴs!**\n\n_Eɴᴀʙʟᴇ ɪᴛ ᴠɪᴀ_ `/player` _sᴇᴛᴛɪɴɢs._"
+        if mystic:
+            return await mystic.edit_text(err_msg)
+        else:
+            return await app.send_message(original_chat_id, err_msg)
     
     # --- 1. PLAYLIST LOGIC ---
     if streamtype == "playlist":
@@ -167,6 +194,7 @@ async def stream(
                 
                 if not is_on:
                     run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ᴘʟᴀʏɪɴɢ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ:</b> {user_name}")
+                    asyncio.create_task(auto_clean(run, 4)) # Auto Delete in 4s
                 else:
                     video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                     caption_text = _[f"stream_{theme}"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_name, video_file)
@@ -182,8 +210,8 @@ async def stream(
                             run = await app.send_message(original_chat_id, text=caption_text, disable_web_page_preview=False)
                     else:
                         run = await app.send_photo(original_chat_id, photo=img, caption=caption_text, has_spoiler=True)
-                
-                await inject_premium_markup(original_chat_id, run.id, button)
+                    
+                    await inject_premium_markup(original_chat_id, run.id, button)
                 
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "stream"
@@ -247,6 +275,7 @@ async def stream(
             
             if not is_on:
                 run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ᴘʟᴀʏɪɴɢ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ:</b> {user_name}")
+                asyncio.create_task(auto_clean(run, 4))
             else:
                 video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                 caption_text = _[f"stream_{theme}"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_name, video_file)
@@ -263,7 +292,7 @@ async def stream(
                 else:
                     run = await app.send_photo(original_chat_id, photo=img, caption=caption_text, has_spoiler=True)
                     
-            await inject_premium_markup(original_chat_id, run.id, button)
+                await inject_premium_markup(original_chat_id, run.id, button)
             
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "stream"
@@ -296,6 +325,7 @@ async def stream(
             
             if not is_on:
                 run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ᴘʟᴀʏɪɴɢ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ:</b> {user_name}")
+                asyncio.create_task(auto_clean(run, 4))
             else:
                 video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                 caption_text = _[f"stream_{theme}"].format(config.SUPPORT_CHAT, title[:23], duration_min, user_name, video_file)
@@ -312,7 +342,7 @@ async def stream(
                 else:
                     run = await app.send_photo(original_chat_id, photo=config.SOUNCLOUD_IMG_URL, caption=caption_text, has_spoiler=True)
                     
-            await inject_premium_markup(original_chat_id, run.id, button)
+                await inject_premium_markup(original_chat_id, run.id, button)
             
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
@@ -349,6 +379,7 @@ async def stream(
             
             if not is_on:
                 run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ᴘʟᴀʏɪɴɢ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛ ʙʏ:</b> {user_name}")
+                asyncio.create_task(auto_clean(run, 4))
             else:
                 video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                 caption_text = _[f"stream_{theme}"].format(link, title[:23], duration_min, user_name, video_file)
@@ -365,7 +396,7 @@ async def stream(
                 else:
                     run = await app.send_photo(original_chat_id, photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL, caption=caption_text, has_spoiler=True)
                     
-            await inject_premium_markup(original_chat_id, run.id, button)
+                await inject_premium_markup(original_chat_id, run.id, button)
             
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
@@ -405,6 +436,7 @@ async def stream(
             
             if not is_on:
                 run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ʟɪᴠᴇ sᴛʀᴇᴀᴍ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ:</b> {user_name}")
+                asyncio.create_task(auto_clean(run, 4))
             else:
                 video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                 caption_text = _[f"livestream_{theme}"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, user_name, video_file)
@@ -421,7 +453,7 @@ async def stream(
                 else:
                     run = await app.send_photo(original_chat_id, photo=img, caption=caption_text, has_spoiler=True)
                     
-            await inject_premium_markup(original_chat_id, run.id, button)
+                await inject_premium_markup(original_chat_id, run.id, button)
             
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
@@ -452,6 +484,7 @@ async def stream(
             
             if not is_on:
                 run = await app.send_message(original_chat_id, text=f"<b><emoji id='5999063078983964465'>🎧</emoji> Sᴛᴀʀᴛᴇᴅ ᴘʟᴀʏɪɴɢ:</b> {title[:30]}\n<b><emoji id='6001522720855037558'>👤</emoji> ʀᴇǫᴜᴇsᴛᴇᴅ ʙʏ:</b> {user_name}")
+                asyncio.create_task(auto_clean(run, 4))
             else:
                 video_file = getattr(config, "PLAYER_VIDEO", "https://files.catbox.moe/qxj5y2.mp4")
                 caption_text = _[f"stream_{theme}"].format(link, title[:23], duration_min, user_name, video_file)
@@ -468,7 +501,7 @@ async def stream(
                 else:
                     run = await app.send_photo(original_chat_id, photo=config.STREAM_IMG_URL, caption=caption_text, has_spoiler=True)
                     
-            await inject_premium_markup(original_chat_id, run.id, button)
+                await inject_premium_markup(original_chat_id, run.id, button)
             
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
