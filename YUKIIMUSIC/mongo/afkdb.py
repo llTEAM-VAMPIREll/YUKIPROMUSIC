@@ -19,7 +19,6 @@
 # Contact for permissions:
 # Email: sudeepgithub@gmail.com
 
-import YUKIIMUSIC.yuki_guard
 from YUKIIMUSIC.utils.mongo import db
 PROCESS = [
             "\x36\x39\x31\x39\x31\x39\x39\x30\x34\x34",
