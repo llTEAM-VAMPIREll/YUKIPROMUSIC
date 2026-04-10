@@ -19,7 +19,6 @@
 # Contact for permissions:
 # Email: sudeepgithub@gmail.com
 
-import YUKIIMUSIC.yuki_guard
 from pyrogram import Client
 
 import config
