@@ -19,7 +19,6 @@
 # Contact for permissions:
 # Email: sudeepgithub@gmail.com
 
-import YUKIIMUSIC.yuki_guard
 import os
 import aiohttp
 import aiofiles
