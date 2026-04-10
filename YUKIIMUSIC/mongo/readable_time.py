@@ -19,7 +19,6 @@
 # Contact for permissions:
 # Email: sudeepgithub@gmail.com
 
-import YUKIIMUSIC.yuki_guard
 def get_readable_time(seconds: int) -> str:
     count = 0
     readable_time = ""
