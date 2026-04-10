@@ -20,8 +20,8 @@
 # Email: sudeepgithub@gmail.com
 
 import YUKIIMUSIC.yuki_guard
-import asyncio
 import shlex
+import subprocess
 from typing import Tuple
 
 from git import Repo
@@ -33,22 +33,25 @@ from ..logging import LOGGER
 
 
 def install_req(cmd: str) -> Tuple[str, str, int, int]:
-    async def install_requirements():
-        args = shlex.split(cmd)
-        process = await asyncio.create_subprocess_exec(
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+    # Ghost process fix: Removed asyncio event loop completely 
+    # and replaced with clean synchronous subprocess
+    args = shlex.split(cmd)
+    try:
+        process = subprocess.run(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
         )
-        stdout, stderr = await process.communicate()
         return (
-            stdout.decode("utf-8", "replace").strip(),
-            stderr.decode("utf-8", "replace").strip(),
+            process.stdout.strip(),
+            process.stderr.strip(),
             process.returncode,
-            process.pid,
+            0 # Process PID not needed anymore as it closes cleanly
         )
-
-    return asyncio.get_event_loop().run_until_complete(install_requirements())
+    except Exception as e:
+        return ("", str(e), 1, 0)
 
 
 def git():
@@ -89,5 +92,8 @@ def git():
             nrs.pull(config.UPSTREAM_BRANCH)
         except GitCommandError:
             repo.git.reset("--hard", "FETCH_HEAD")
+        
+        # Now it runs cleanly without creating zombie processes
         install_req("pip3 install --no-cache-dir -r requirements.txt")
         LOGGER(__name__).info(f"Fetching updates from upstream repository...")
+        
