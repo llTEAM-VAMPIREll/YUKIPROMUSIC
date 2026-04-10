@@ -19,7 +19,6 @@
 # Contact for permissions:
 # Email: sudeepgithub@gmail.com
 
-import YUKIIMUSIC.yuki_guard
 from YUKIIMUSIC import app 
 import requests as r
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup 
